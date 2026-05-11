@@ -1,6 +1,7 @@
 package com.miasi.school.dto;
 
 import com.miasi.school.model.SchoolDomain;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.util.List;
 
 public record BootstrapResponse(
@@ -14,7 +15,8 @@ public record BootstrapResponse(
         List<SchoolDomain.PrincipalProfile> principals,
         List<SchoolDomain.SchoolClass> classes,
         List<SchoolDomain.Subject> subjects,
-        List<SchoolDomain.ScheduleEntry> schedule,
+        @JsonAlias("schedule")
+        List<SchoolDomain.Lesson> lessons,
         List<SchoolDomain.ClassSession> classSessions,
         List<SchoolDomain.AttendanceRecord> attendance,
         List<SchoolDomain.GradeRecord> grades,

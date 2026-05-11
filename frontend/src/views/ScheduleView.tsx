@@ -49,7 +49,7 @@ export function ScheduleView({ bootstrap, session }: ScheduleViewProps) {
     if (session.roles.includes('TEACHER')) {
       const teacherProfile = bootstrap.teachers.find((t) => t.userId === session.userId);
       if (teacherProfile) {
-        return bootstrap.schedule
+        return bootstrap.lessons
           .filter((s) => s.teacherId === teacherProfile.id)
           .map((s) => s.classId)
           .filter((v, i, a) => a.indexOf(v) === i);
@@ -70,8 +70,8 @@ export function ScheduleView({ bootstrap, session }: ScheduleViewProps) {
   const [selectedClassId, setSelectedClassId] = useState<string>(visibleClassIds[0] ?? '');
 
   const filteredSchedule = useMemo(
-    () => bootstrap.schedule.filter((s) => s.classId === selectedClassId),
-    [bootstrap.schedule, selectedClassId],
+    () => bootstrap.lessons.filter((s) => s.classId === selectedClassId),
+    [bootstrap.lessons, selectedClassId],
   );
 
   const byDay = useMemo(() => {

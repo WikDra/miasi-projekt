@@ -30,7 +30,7 @@ public class DemoDataStore {
     private final Map<UUID, SchoolDomain.PrincipalProfile> principals = new LinkedHashMap<>();
     private final Map<UUID, SchoolDomain.SchoolClass> classes = new LinkedHashMap<>();
     private final Map<UUID, SchoolDomain.Subject> subjects = new LinkedHashMap<>();
-    private final Map<UUID, SchoolDomain.ScheduleEntry> schedules = new LinkedHashMap<>();
+    private final Map<UUID, SchoolDomain.Lesson> lessons = new LinkedHashMap<>();
     private final Map<UUID, SchoolDomain.ClassSession> classSessions = new LinkedHashMap<>();
     private final Map<UUID, SchoolDomain.AttendanceRecord> attendance = new LinkedHashMap<>();
     private final Map<UUID, SchoolDomain.GradeRecord> grades = new LinkedHashMap<>();
@@ -106,7 +106,7 @@ public class DemoDataStore {
 
         SchoolDomain.AttendanceRecord record = new SchoolDomain.AttendanceRecord(
                 UUID.randomUUID(), request.sessionId(), request.studentId(),
-                request.status().trim().toUpperCase(),
+            SchoolDomain.AttendanceStatus.valueOf(request.status().trim().toUpperCase()),
                 request.excuseComment()
         );
         attendance.put(record.id(), record);
@@ -260,10 +260,10 @@ public class DemoDataStore {
 
             List<SchoolDomain.AttendanceRecord> records = entry.getValue();
             int total = records.size();
-            int present = (int) records.stream().filter(r -> "PRESENT".equals(r.status())).count();
-            int absent = (int) records.stream().filter(r -> "ABSENT".equals(r.status())).count();
-            int late = (int) records.stream().filter(r -> "LATE".equals(r.status())).count();
-            int excused = (int) records.stream().filter(r -> "EXCUSED".equals(r.status())).count();
+            int present = (int) records.stream().filter(r -> SchoolDomain.AttendanceStatus.PRESENT.equals(r.status())).count();
+            int absent = (int) records.stream().filter(r -> SchoolDomain.AttendanceStatus.ABSENT.equals(r.status())).count();
+            int late = (int) records.stream().filter(r -> SchoolDomain.AttendanceStatus.LATE.equals(r.status())).count();
+            int excused = (int) records.stream().filter(r -> SchoolDomain.AttendanceStatus.EXCUSED.equals(r.status())).count();
             double pct = total > 0 ? Math.round((present + late) * 1000.0 / total) / 10.0 : 0;
 
             report.add(new AttendanceReportEntry(
@@ -435,22 +435,22 @@ public class DemoDataStore {
     }
 
     private void applyState(BootstrapResponse state) {
-        replaceState(roles, state.roles(), SchoolDomain.Role::id);
-        replaceState(users, state.users(), SchoolDomain.User::id);
-        replaceState(teachers, state.teachers(), SchoolDomain.TeacherProfile::id);
-        replaceState(students, state.students(), SchoolDomain.StudentProfile::id);
-        replaceState(parents, state.parents(), SchoolDomain.ParentProfile::id);
-        replaceState(secretaries, state.secretaries(), SchoolDomain.SecretaryProfile::id);
-        replaceState(principals, state.principals(), SchoolDomain.PrincipalProfile::id);
-        replaceState(classes, state.classes(), SchoolDomain.SchoolClass::id);
-        replaceState(subjects, state.subjects(), SchoolDomain.Subject::id);
-        replaceState(schedules, state.schedule(), SchoolDomain.ScheduleEntry::id);
-        replaceState(classSessions, state.classSessions(), SchoolDomain.ClassSession::id);
-        replaceState(attendance, state.attendance(), SchoolDomain.AttendanceRecord::id);
-        replaceState(grades, state.grades(), SchoolDomain.GradeRecord::id);
-        replaceState(messages, state.messages(), SchoolDomain.Message::id);
-        replaceState(notifications, state.notifications(), SchoolDomain.Notification::id);
-        replaceState(teachingMaterials, state.teachingMaterials(), SchoolDomain.TeachingMaterial::id);
+        replaceState(roles, safeList(state.roles()), SchoolDomain.Role::id);
+        replaceState(users, safeList(state.users()), SchoolDomain.User::id);
+        replaceState(teachers, safeList(state.teachers()), SchoolDomain.TeacherProfile::id);
+        replaceState(students, safeList(state.students()), SchoolDomain.StudentProfile::id);
+        replaceState(parents, safeList(state.parents()), SchoolDomain.ParentProfile::id);
+        replaceState(secretaries, safeList(state.secretaries()), SchoolDomain.SecretaryProfile::id);
+        replaceState(principals, safeList(state.principals()), SchoolDomain.PrincipalProfile::id);
+        replaceState(classes, safeList(state.classes()), SchoolDomain.SchoolClass::id);
+        replaceState(subjects, safeList(state.subjects()), SchoolDomain.Subject::id);
+        replaceState(lessons, safeList(state.lessons()), SchoolDomain.Lesson::id);
+        replaceState(classSessions, safeList(state.classSessions()), SchoolDomain.ClassSession::id);
+        replaceState(attendance, safeList(state.attendance()), SchoolDomain.AttendanceRecord::id);
+        replaceState(grades, safeList(state.grades()), SchoolDomain.GradeRecord::id);
+        replaceState(messages, safeList(state.messages()), SchoolDomain.Message::id);
+        replaceState(notifications, safeList(state.notifications()), SchoolDomain.Notification::id);
+        replaceState(teachingMaterials, safeList(state.teachingMaterials()), SchoolDomain.TeachingMaterial::id);
     }
 
     private BootstrapResponse snapshot() {
@@ -465,7 +465,7 @@ public class DemoDataStore {
                 List.copyOf(principals.values()),
                 List.copyOf(classes.values()),
                 List.copyOf(subjects.values()),
-                List.copyOf(schedules.values()),
+                List.copyOf(lessons.values()),
                 List.copyOf(classSessions.values()),
                 List.copyOf(attendance.values()),
                 List.copyOf(grades.values()),
@@ -519,11 +519,11 @@ public class DemoDataStore {
         SchoolDomain.Subject math = new SchoolDomain.Subject(id("subject-math"), "Matematyka", "Zajęcia z algebry i geometrii");
         SchoolDomain.Subject informatics = new SchoolDomain.Subject(id("subject-it"), "Informatyka", "Podstawy programowania i systemów");
 
-        SchoolDomain.ScheduleEntry mathSchedule = new SchoolDomain.ScheduleEntry(id("schedule-math"), class1A.id(), teacher.id(), math.id(), DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(8, 45), "Sala 12");
-        SchoolDomain.ScheduleEntry itSchedule = new SchoolDomain.ScheduleEntry(id("schedule-it"), class1A.id(), teacher.id(), informatics.id(), DayOfWeek.WEDNESDAY, LocalTime.of(10, 0), LocalTime.of(10, 45), "Sala 21");
+        SchoolDomain.Lesson mathLesson = new SchoolDomain.Lesson(id("lesson-math"), class1A.id(), teacher.id(), math.id(), DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(8, 45), "Sala 12");
+        SchoolDomain.Lesson itLesson = new SchoolDomain.Lesson(id("lesson-it"), class1A.id(), teacher.id(), informatics.id(), DayOfWeek.WEDNESDAY, LocalTime.of(10, 0), LocalTime.of(10, 45), "Sala 21");
 
-        SchoolDomain.ClassSession session = new SchoolDomain.ClassSession(id("session-1"), mathSchedule.id(), LocalDate.now().plusDays(1), "Powtórka z równań", "PLANNED");
-        SchoolDomain.AttendanceRecord attendanceRecord = new SchoolDomain.AttendanceRecord(id("attendance-1"), session.id(), studentProfile.id(), "PRESENT", null);
+        SchoolDomain.ClassSession session = new SchoolDomain.ClassSession(id("session-1"), mathLesson.id(), LocalDate.now().plusDays(1), "Powtórka z równań", "PLANNED");
+        SchoolDomain.AttendanceRecord attendanceRecord = new SchoolDomain.AttendanceRecord(id("attendance-1"), session.id(), studentProfile.id(), SchoolDomain.AttendanceStatus.PRESENT, null);
         SchoolDomain.GradeRecord grade = new SchoolDomain.GradeRecord(id("grade-1"), studentProfile.id(), teacherProfile.id(), math.id(), new BigDecimal("5.0"), 1, "SPRAWDZIAN", "Bardzo dobra praca", LocalDate.now().minusDays(1), "CURRENT");
 
         SchoolDomain.Message message = new SchoolDomain.Message(id("message-1"), teacher.id(), parent.id(), "Uwagi po lekcji", "Ola dobrze radzi sobie z materiałem, warto poćwiczyć zadania domowe.", LocalDateTime.now().minusHours(2));
@@ -538,8 +538,8 @@ public class DemoDataStore {
         classes.put(class1A.id(), class1A);
         subjects.put(math.id(), math);
         subjects.put(informatics.id(), informatics);
-        schedules.put(mathSchedule.id(), mathSchedule);
-        schedules.put(itSchedule.id(), itSchedule);
+        lessons.put(mathLesson.id(), mathLesson);
+        lessons.put(itLesson.id(), itLesson);
         classSessions.put(session.id(), session);
         attendance.put(attendanceRecord.id(), attendanceRecord);
         grades.put(grade.id(), grade);
@@ -551,7 +551,7 @@ public class DemoDataStore {
     private void clearState() {
         roles.clear(); users.clear(); teachers.clear(); students.clear();
         parents.clear(); secretaries.clear(); principals.clear(); classes.clear();
-        subjects.clear(); schedules.clear(); classSessions.clear(); attendance.clear();
+        subjects.clear(); lessons.clear(); classSessions.clear(); attendance.clear();
         grades.clear(); messages.clear(); notifications.clear(); teachingMaterials.clear();
     }
 
@@ -560,6 +560,10 @@ public class DemoDataStore {
         for (T entry : entries) {
             target.put(idExtractor.apply(entry), entry);
         }
+    }
+
+    private static <T> List<T> safeList(List<T> entries) {
+        return entries == null ? List.of() : entries;
     }
 
     private SchoolDomain.Role addRole(String name) {

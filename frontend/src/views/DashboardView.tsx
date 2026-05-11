@@ -6,7 +6,7 @@ import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded';
 import ClassRoundedIcon from '@mui/icons-material/ClassRounded';
 import MarkEmailUnreadRoundedIcon from '@mui/icons-material/MarkEmailUnreadRounded';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
-import type { BootstrapResponse, Session, SectionKey } from '../types';
+import type { BootstrapResponse, Session, SectionKey, User } from '../types';
 import { EntityTable } from '../components/EntityTable';
 import { MetricCard } from '../components/MetricCard';
 import { GradesSection } from './GradesSection';
@@ -14,7 +14,7 @@ import { ScheduleView } from './ScheduleView';
 import { AttendanceSection } from './AttendanceSection';
 import { ReportsView } from './ReportsView';
 import { MessagesSection } from './MessagesSection';
-import { createUser, createStudent, createClassEntity } from '../api';
+import { createUser, createStudent, createClassEntity, updateUser } from '../api';
 import { useState, type FormEvent } from 'react';
 
 interface DashboardViewProps {
@@ -45,10 +45,13 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
 
   // ── CRUD dialogs state ──
   const [showAddUser, setShowAddUser] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [showAddClass, setShowAddClass] = useState(false);
   const [crudError, setCrudError] = useState<string | null>(null);
   const [crudLoading, setCrudLoading] = useState(false);
+
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   // New user form
   const [nuFirstName, setNuFirstName] = useState('');
@@ -56,6 +59,13 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
   const [nuEmail, setNuEmail] = useState('');
   const [nuPassword, setNuPassword] = useState('');
   const [nuRole, setNuRole] = useState('STUDENT');
+
+  // Edit user form
+  const [euFirstName, setEuFirstName] = useState('');
+  const [euLastName, setEuLastName] = useState('');
+  const [euEmail, setEuEmail] = useState('');
+  const [euStatus, setEuStatus] = useState('ACTIVE');
+  const [euRoles, setEuRoles] = useState<string[]>(['STUDENT']);
 
   // New student form
   const [nsUserId, setNsUserId] = useState('');
@@ -77,6 +87,47 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
     } catch (err) {
       setCrudError(err instanceof Error ? err.message : 'Błąd');
     } finally { setCrudLoading(false); }
+  }
+
+  function openEditUser(user: User) {
+    setCrudError(null);
+    setEditingUserId(user.id);
+    setEuFirstName(user.firstName);
+    setEuLastName(user.lastName);
+    setEuEmail(user.email);
+    setEuStatus(user.status);
+    setEuRoles(user.roles.length > 0 ? user.roles : ['STUDENT']);
+    setShowEditUser(true);
+  }
+
+  function closeEditUser() {
+    setShowEditUser(false);
+    setEditingUserId(null);
+  }
+
+  async function handleEditUser(e: FormEvent) {
+    e.preventDefault();
+    if (!editingUserId) {
+      return;
+    }
+
+    setCrudLoading(true);
+    setCrudError(null);
+    try {
+      await updateUser(editingUserId, {
+        firstName: euFirstName,
+        lastName: euLastName,
+        email: euEmail,
+        status: euStatus,
+        roles: euRoles,
+      }, session.token);
+      await onRefreshBootstrap(true);
+      closeEditUser();
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally {
+      setCrudLoading(false);
+    }
   }
 
   async function handleAddStudent(e: FormEvent) {
@@ -182,6 +233,11 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
               { key: 'email', label: 'Email' },
               { key: 'roles', label: 'Role', render: (row) => <Stack direction="row" spacing={0.5} flexWrap="wrap">{row.roles.map((role) => <Chip key={role} label={role} size="small" />)}</Stack> },
               { key: 'status', label: 'Status', render: (row) => <Chip label={row.status} color={row.status === 'ACTIVE' ? 'success' : 'default'} size="small" /> },
+              { key: 'actions', label: 'Akcje', render: (row) => (
+                <Button size="small" variant="outlined" onClick={() => openEditUser(row)}>
+                  Edytuj
+                </Button>
+              ) },
             ]}
           />
         </Stack>
@@ -197,7 +253,7 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
             { key: 'schoolYear', label: 'Rok szkolny' },
             { key: 'teacherId', label: 'Wychowawca', render: (row) => teacherNameById.get(row.teacherId) ?? row.teacherId },
           ]} />
-          <EntityTable title="Plan lekcji" rows={bootstrap.schedule} columns={[
+          <EntityTable title="Plan lekcji" rows={bootstrap.lessons} columns={[
             { key: 'dayOfWeek', label: 'Dzień' },
             { key: 'startTime', label: 'Start', render: (row) => formatTimeLabel(row.startTime) },
             { key: 'endTime', label: 'Koniec', render: (row) => formatTimeLabel(row.endTime) },
@@ -267,6 +323,48 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
           <DialogActions>
             <Button onClick={() => setShowAddUser(false)}>Anuluj</Button>
             <Button type="submit" variant="contained" disabled={crudLoading}>{crudLoading ? 'Zapisywanie...' : 'Dodaj'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* ── Edit User Dialog ── */}
+      <Dialog open={showEditUser} onClose={closeEditUser} maxWidth="sm" fullWidth>
+        <form onSubmit={(e) => { void handleEditUser(e); }}>
+          <DialogTitle>Edytuj użytkownika</DialogTitle>
+          <DialogContent>
+            {crudError && <Alert severity="error" sx={{ mb: 2 }}>{crudError}</Alert>}
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField label="Imię" value={euFirstName} onChange={(e) => setEuFirstName(e.target.value)} required fullWidth />
+              <TextField label="Nazwisko" value={euLastName} onChange={(e) => setEuLastName(e.target.value)} required fullWidth />
+              <TextField label="Email" type="email" value={euEmail} onChange={(e) => setEuEmail(e.target.value)} required fullWidth />
+              <TextField label="Status" value={euStatus} onChange={(e) => setEuStatus(e.target.value)} required fullWidth />
+              <TextField
+                select
+                label="Role"
+                value={euRoles}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEuRoles(typeof value === 'string' ? value.split(',') : value);
+                }}
+                fullWidth
+                SelectProps={{
+                  multiple: true,
+                  renderValue: (selected) => (selected as string[]).join(', '),
+                }}
+              >
+                {bootstrap.roles.map((r) => (
+                  <MenuItem key={r.id} value={r.name}>
+                    {r.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeEditUser}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={crudLoading || !editingUserId}>
+              {crudLoading ? 'Zapisywanie...' : 'Zapisz'}
+            </Button>
           </DialogActions>
         </form>
       </Dialog>

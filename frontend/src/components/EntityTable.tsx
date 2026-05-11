@@ -22,6 +22,7 @@ interface EntityTableProps<T extends { id?: string }> {
   columns: Column<T>[];
   rows: T[];
   emptyLabel?: string;
+  onRowClick?: (row: T) => void;
 }
 
 export function EntityTable<T extends { id?: string }>({
@@ -29,6 +30,7 @@ export function EntityTable<T extends { id?: string }>({
   columns,
   rows,
   emptyLabel = 'Brak danych do wyświetlenia',
+  onRowClick,
 }: EntityTableProps<T>) {
   return (
     <Paper
@@ -64,7 +66,12 @@ export function EntityTable<T extends { id?: string }>({
               </TableRow>
             ) : (
               rows.map((row, index) => (
-                <TableRow key={row.id ?? `${title}-${index}`} hover>
+                <TableRow
+                  key={row.id ?? `${title}-${index}`}
+                  hover={Boolean(onRowClick)}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  sx={onRowClick ? { cursor: 'pointer' } : undefined}
+                >
                   {columns.map((column) => (
                     <TableCell key={column.key} align={column.align ?? 'left'}>
                       {column.render ? column.render(row) : String((row as Record<string, unknown>)[column.key] ?? '')}

@@ -62,7 +62,7 @@ export interface Subject {
   description: string;
 }
 
-export interface ScheduleEntry {
+export interface Lesson {
   id: string;
   classId: string;
   teacherId: string;
@@ -85,9 +85,11 @@ export interface AttendanceRecord {
   id: string;
   sessionId: string;
   studentId: string;
-  status: string;
+  status: AttendanceStatus;
   excuseComment: string | null;
 }
+
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
 
 export interface GradeRecord {
   id: string;
@@ -151,7 +153,7 @@ export interface BootstrapResponse {
   principals: PrincipalProfile[];
   classes: SchoolClass[];
   subjects: Subject[];
-  schedule: ScheduleEntry[];
+  lessons: Lesson[];
   classSessions: ClassSession[];
   attendance: AttendanceRecord[];
   grades: GradeRecord[];

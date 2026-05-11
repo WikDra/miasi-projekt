@@ -45,14 +45,22 @@ public final class SchoolDomain {
     public record Subject(UUID id, String name, String description) {
     }
 
-    public record ScheduleEntry(UUID id, UUID classId, UUID teacherId, UUID subjectId, DayOfWeek dayOfWeek,
-                                LocalTime startTime, LocalTime endTime, String roomNumber) {
+    public record Lesson(UUID id, UUID classId, UUID teacherId, UUID subjectId, DayOfWeek dayOfWeek,
+                         LocalTime startTime, LocalTime endTime, String roomNumber) {
     }
 
-    public record ClassSession(UUID id, UUID scheduleId, LocalDate sessionDate, String topic, String status) {
+    public record ClassSession(UUID id, UUID lessonId, LocalDate sessionDate, String topic, String status) {
     }
 
-    public record AttendanceRecord(UUID id, UUID sessionId, UUID studentId, String status, String excuseComment) {
+    public enum AttendanceStatus {
+        PRESENT,
+        ABSENT,
+        LATE,
+        EXCUSED
+    }
+
+    public record AttendanceRecord(UUID id, UUID sessionId, UUID studentId, AttendanceStatus status,
+                                   String excuseComment) {
     }
 
     public record GradeRecord(UUID id, UUID studentId, UUID teacherId, UUID subjectId, BigDecimal decimalValue,

@@ -78,7 +78,7 @@ class DemoDataStoreTest {
                 new CreateAttendanceRequest(sessionId, studentId, "PRESENT", null), teacherToken);
 
         assertNotNull(record.id());
-        assertEquals("PRESENT", record.status());
+        assertEquals(com.miasi.school.model.SchoolDomain.AttendanceStatus.PRESENT, record.status());
     }
 
     @Test

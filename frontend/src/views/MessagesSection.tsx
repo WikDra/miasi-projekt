@@ -99,6 +99,7 @@ export function MessagesSection({ bootstrap, session, onRefreshBootstrap }: Mess
             <EntityTable
               title="Wiadomości"
               rows={visibleMessages}
+              onRowClick={(row) => setSelectedMessage(row)}
               columns={[
                 { key: 'title', label: 'Tytuł' },
                 { key: 'senderId', label: 'Nadawca', render: (row) => {
