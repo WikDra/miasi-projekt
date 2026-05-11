@@ -1,29 +1,20 @@
 import {
-  AppBar,
-  Avatar,
-  Box,
-  Divider,
-  Drawer,
-  IconButton,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Stack,
-  Toolbar,
-  Typography,
-  useMediaQuery,
+  AppBar, Avatar, Box, Divider, Drawer, IconButton, List, ListItemButton,
+  ListItemIcon, ListItemText, Stack, Toolbar, Typography, useMediaQuery,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import ClassRoundedIcon from '@mui/icons-material/ClassRounded';
+import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
+import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import MailRoundedIcon from '@mui/icons-material/MailRounded';
+import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { SectionKey, Session } from '../types';
 
 interface ShellProps {
@@ -36,17 +27,37 @@ interface ShellProps {
 
 const drawerWidth = 280;
 
+interface NavItem {
+  key: SectionKey;
+  label: string;
+  icon: ReactNode;
+  roles?: string[]; // if set, only these roles see the item
+}
+
+const allNavItems: NavItem[] = [
+  { key: 'dashboard', label: 'Pulpit', icon: <DashboardRoundedIcon /> },
+  { key: 'users', label: 'Użytkownicy', icon: <PeopleRoundedIcon />, roles: ['ADMIN'] },
+  { key: 'classes', label: 'Klasy', icon: <ClassRoundedIcon />, roles: ['ADMIN', 'SECRETARY', 'TEACHER', 'DIRECTOR'] },
+  { key: 'schedule', label: 'Plan lekcji', icon: <CalendarMonthRoundedIcon /> },
+  { key: 'grades', label: 'Oceny', icon: <SchoolRoundedIcon /> },
+  { key: 'attendance', label: 'Frekwencja', icon: <FactCheckRoundedIcon /> },
+  { key: 'students', label: 'Uczniowie', icon: <SchoolRoundedIcon />, roles: ['ADMIN', 'SECRETARY', 'TEACHER', 'DIRECTOR'] },
+  { key: 'messages', label: 'Wiadomości', icon: <MailRoundedIcon /> },
+  { key: 'reports', label: 'Raporty', icon: <AssessmentRoundedIcon />, roles: ['ADMIN', 'DIRECTOR'] },
+];
+
 export function Shell({ session, activeSection, onNavigate, onLogout, children }: ShellProps) {
   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
-  const navItems = [
-    { key: 'dashboard' as const, label: 'Pulpit', icon: <DashboardRoundedIcon /> },
-    { key: 'users' as const, label: 'Użytkownicy', icon: <PeopleRoundedIcon /> },
-    { key: 'classes' as const, label: 'Klasy i plan', icon: <ClassRoundedIcon /> },
-    { key: 'grades' as const, label: 'Oceny', icon: <SchoolRoundedIcon /> },
-    { key: 'students' as const, label: 'Uczniowie', icon: <SchoolRoundedIcon /> },
-    { key: 'messages' as const, label: 'Wiadomości', icon: <MailRoundedIcon /> },
-  ];
+
+  const navItems = useMemo(
+    () => allNavItems.filter((item) => {
+      if (!item.roles) return true;
+      return session.roles.some((role) => item.roles!.includes(role));
+    }),
+    [session.roles],
+  );
+
   const activeNavItem = navItems.find((item) => item.key === activeSection);
 
   const drawerContent = (

@@ -1,4 +1,4 @@
-export type SectionKey = 'dashboard' | 'users' | 'classes' | 'grades' | 'students' | 'messages';
+export type SectionKey = 'dashboard' | 'users' | 'classes' | 'schedule' | 'grades' | 'attendance' | 'students' | 'messages' | 'reports';
 
 export interface Role {
   id: string;
@@ -173,6 +173,67 @@ export interface CreateGradeRequest {
   weight: number;
   type: string;
   comment: string;
+}
+
+export interface CreateAttendanceRequest {
+  sessionId: string;
+  studentId: string;
+  status: string;
+  excuseComment?: string;
+}
+
+export interface CreateMessageRequest {
+  recipientId: string;
+  title: string;
+  content: string;
+}
+
+export interface CreateUserRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  roles: string[];
+}
+
+export interface UpdateUserRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: string;
+  roles: string[];
+}
+
+export interface CreateStudentRequest {
+  userId: string;
+  parentId?: string;
+  classId: string;
+  studentNumber: string;
+}
+
+export interface CreateClassRequest {
+  name: string;
+  teacherId: string;
+  schoolYear: string;
+}
+
+export interface AttendanceReportEntry {
+  studentName: string;
+  className: string;
+  totalSessions: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  attendancePercentage: number;
+}
+
+export interface GradeReportEntry {
+  studentName: string;
+  className: string;
+  subjectName: string;
+  average: number;
+  gradeCount: number;
 }
 
 export interface LoginResponse {

@@ -55,6 +55,23 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
   const subjectById = useMemo(() => new Map(bootstrap.subjects.map((subject) => [subject.id, subject])), [bootstrap.subjects]);
 
   const canManageGrades = session.roles.some((role) => ['TEACHER', 'ADMIN', 'DIRECTOR'].includes(role));
+
+  const visibleGrades = useMemo(() => {
+    if (session.roles.some((r) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(r))) {
+      return bootstrap.grades;
+    }
+    if (session.roles.includes('STUDENT')) {
+      const profile = bootstrap.students.find((s) => s.userId === session.userId);
+      return profile ? bootstrap.grades.filter((g) => g.studentId === profile.id) : [];
+    }
+    if (session.roles.includes('PARENT')) {
+      const childProfile = bootstrap.students.find((s) =>
+        bootstrap.parents.some((p) => p.userId === session.userId && p.id === s.parentId));
+      return childProfile ? bootstrap.grades.filter((g) => g.studentId === childProfile.id) : [];
+    }
+    return [];
+  }, [bootstrap, session]);
+
   const [form, setForm] = useState<GradeFormState>(() => getInitialForm(bootstrap, session.userId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -241,7 +258,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
           <Stack spacing={2.5}>
             <EntityTable
               title="Lista ocen"
-              rows={bootstrap.grades}
+              rows={visibleGrades}
               columns={[
                 { key: 'decimalValue', label: 'Ocena' },
                 { key: 'weight', label: 'Waga', align: 'center' },
