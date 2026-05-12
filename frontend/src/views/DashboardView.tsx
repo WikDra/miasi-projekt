@@ -25,7 +25,20 @@ interface DashboardViewProps {
 }
 
 function formatTimeLabel(value: string) {
-  return value.length <= 5 ? value : new Date(value).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+  if (!value) {
+    return '';
+  }
+
+  const normalized = value.trim();
+  const timeMatch = normalized.match(/^(\d{2}):(\d{2})(?::\d{2}(?:\.\d{1,9})?)?$/);
+  if (timeMatch) {
+    return `${timeMatch[1]}:${timeMatch[2]}`;
+  }
+
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime())
+    ? normalized
+    : parsed.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatDateLabel(value: string) {
