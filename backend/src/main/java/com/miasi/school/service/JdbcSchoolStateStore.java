@@ -3,8 +3,10 @@ package com.miasi.school.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.miasi.school.dto.BootstrapResponse;
+import java.sql.DatabaseMetaData;
 import java.util.Optional;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,10 +17,12 @@ class JdbcSchoolStateStore implements SchoolStateStore {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final boolean postgresDialect;
 
     JdbcSchoolStateStore(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.postgresDialect = resolvePostgresDialect();
         createTableIfNeeded();
     }
 
@@ -47,15 +51,28 @@ class JdbcSchoolStateStore implements SchoolStateStore {
     public void save(BootstrapResponse state) {
         try {
             String payload = objectMapper.writeValueAsString(state);
-            jdbcTemplate.update(
-                    """
-                            MERGE INTO school_state (state_key, payload, updated_at)
-                            KEY (state_key)
-                            VALUES (?, ?, CURRENT_TIMESTAMP)
-                            """,
-                    STATE_KEY,
-                    payload
-            );
+            if (postgresDialect) {
+                jdbcTemplate.update(
+                        """
+                                INSERT INTO school_state (state_key, payload, updated_at)
+                                VALUES (?, ?, CURRENT_TIMESTAMP)
+                                ON CONFLICT (state_key)
+                                DO UPDATE SET payload = EXCLUDED.payload, updated_at = EXCLUDED.updated_at
+                                """,
+                        STATE_KEY,
+                        payload
+                );
+            } else {
+                jdbcTemplate.update(
+                        """
+                                MERGE INTO school_state (state_key, payload, updated_at)
+                                KEY (state_key)
+                                VALUES (?, ?, CURRENT_TIMESTAMP)
+                                """,
+                        STATE_KEY,
+                        payload
+                );
+            }
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Nie udało się zapisać stanu aplikacji do bazy", exception);
         }
@@ -65,9 +82,17 @@ class JdbcSchoolStateStore implements SchoolStateStore {
         jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS school_state (
                     state_key VARCHAR(64) PRIMARY KEY,
-                    payload CLOB NOT NULL,
+                    payload TEXT NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
                 """);
+    }
+
+    private boolean resolvePostgresDialect() {
+        return jdbcTemplate.execute((ConnectionCallback<Boolean>) connection -> {
+            DatabaseMetaData metaData = connection.getMetaData();
+            String productName = metaData.getDatabaseProductName();
+            return productName != null && productName.toLowerCase().contains("postgres");
+        });
     }
 }

@@ -2,13 +2,13 @@ spring:
   application:
     name: school-backend
   datasource:
-    url: jdbc:h2:file:./data/school-db;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_UPPER=false
-    username: sa
-    password: ""
-    driver-class-name: org.h2.Driver
-  h2:
-    console:
-      enabled: true
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/school}
+    username: ${SPRING_DATASOURCE_USERNAME:school}
+    password: ${SPRING_DATASOURCE_PASSWORD:school}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
 
 server:
   port: 8080
