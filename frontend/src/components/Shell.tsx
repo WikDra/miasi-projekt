@@ -99,7 +99,7 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', overflowX: 'hidden' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', overflow: 'hidden', maxWidth: '100vw' }}>
       <AppBar
         position="fixed"
         color="transparent"
@@ -118,13 +118,13 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
               <MenuRoundedIcon />
             </IconButton>
           ) : null}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6">{activeSection === 'dashboard' ? 'Pulpit' : activeNavItem?.label ?? 'Pulpit'}</Typography>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="h6" noWrap>{activeSection === 'dashboard' ? 'Pulpit' : activeNavItem?.label ?? 'Pulpit'}</Typography>
           </Box>
-          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0, flexShrink: 0 }}>
             <Avatar sx={{ bgcolor: 'secondary.main' }}>{session.fullName.slice(0, 1)}</Avatar>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="subtitle2" noWrap sx={{ maxWidth: { xs: '38vw', sm: 220 } }}>
+              <Typography variant="subtitle2" noWrap sx={{ maxWidth: { xs: '30vw', sm: 220 } }}>
                 {session.fullName}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap sx={{ display: { xs: 'none', sm: 'block' }, maxWidth: 220 }}>
@@ -137,7 +137,7 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
 
       <Box
         component="nav"
-        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        sx={{ width: { xs: 0, md: drawerWidth }, flexShrink: 0 }}
         aria-label="sidebar navigation"
       >
         <Drawer
@@ -161,12 +161,12 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
       <Box
         component="main"
         sx={{
-          flex: 1,
+          flexGrow: 1,
           p: { xs: 2, md: 4 },
           mt: 10,
           minWidth: 0,
-          overflowX: 'hidden',
-          width: { md: `calc(100% - ${drawerWidth}px)` },
+          maxWidth: '100%',
+          overflowX: 'auto',
         }}
       >
         {children}

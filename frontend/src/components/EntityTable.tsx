@@ -1,4 +1,5 @@
 import {
+  Box,
   Paper,
   Table,
   TableBody,
@@ -35,23 +36,29 @@ export function EntityTable<T extends { id?: string }>({
   return (
     <Paper
       sx={{
-        overflow: 'hidden',
         width: '100%',
         minWidth: 0,
         border: '1px solid rgba(17, 100, 102, 0.12)',
+        overflow: 'hidden',
       }}
     >
-      <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
-        <Table sx={{ minWidth: 0 }}>
+      <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>
+        <Typography variant="h6">{title}</Typography>
+      </Box>
+
+      <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+        <Table sx={{ minWidth: Math.max(columns.length * 100, 500) }}>
           <TableHead>
             <TableRow>
-              <TableCell colSpan={columns.length} sx={{ borderBottom: 'none', pb: 0 }}>
-                <Typography variant="h6">{title}</Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
               {columns.map((column) => (
-                <TableCell key={column.key} align={column.align ?? 'left'} sx={{ fontWeight: 700 }}>
+                <TableCell
+                  key={column.key}
+                  align={column.align ?? 'left'}
+                  sx={{
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {column.label}
                 </TableCell>
               ))}
@@ -75,7 +82,13 @@ export function EntityTable<T extends { id?: string }>({
                   sx={onRowClick ? { cursor: 'pointer' } : undefined}
                 >
                   {columns.map((column) => (
-                    <TableCell key={column.key} align={column.align ?? 'left'}>
+                    <TableCell
+                      key={column.key}
+                      align={column.align ?? 'left'}
+                      sx={{
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {column.render ? column.render(row) : String((row as Record<string, unknown>)[column.key] ?? '')}
                     </TableCell>
                   ))}

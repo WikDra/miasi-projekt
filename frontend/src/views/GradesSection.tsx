@@ -6,7 +6,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   MenuItem,
   Paper,
   Stack,
@@ -232,20 +231,27 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
   ];
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ maxWidth: '100%', overflow: 'hidden' }}>
       <Box>
         <Typography variant="h3">Oceny</Typography>
       </Box>
 
-      <Grid container spacing={2.5}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: canManageGrades ? '5fr 7fr' : '1fr' },
+          gap: 2.5,
+        }}
+      >
         {canManageGrades ? (
-          <Grid item xs={12} lg={5}>
+          <Box sx={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
             <Paper
               elevation={0}
               sx={{
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 border: '1px solid rgba(17, 100, 102, 0.12)',
                 background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
+                overflow: 'hidden',
               }}
             >
               <Typography variant="h6">Wystaw nową ocenę</Typography>
@@ -308,30 +314,26 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   ))}
                 </TextField>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Ocena"
-                      type="number"
-                      inputProps={{ step: 0.5, min: 1, max: 6 }}
-                      value={form.decimalValue}
-                      onChange={(event) => setForm((current) => ({ ...current, decimalValue: event.target.value }))}
-                      required
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Waga"
-                      type="number"
-                      inputProps={{ min: 1, max: 10 }}
-                      value={form.weight}
-                      onChange={(event) => setForm((current) => ({ ...current, weight: event.target.value }))}
-                      required
-                      fullWidth
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <TextField
+                    label="Ocena"
+                    type="number"
+                    inputProps={{ step: 0.5, min: 1, max: 6 }}
+                    value={form.decimalValue}
+                    onChange={(event) => setForm((current) => ({ ...current, decimalValue: event.target.value }))}
+                    required
+                    fullWidth
+                  />
+                  <TextField
+                    label="Waga"
+                    type="number"
+                    inputProps={{ min: 1, max: 10 }}
+                    value={form.weight}
+                    onChange={(event) => setForm((current) => ({ ...current, weight: event.target.value }))}
+                    required
+                    fullWidth
+                  />
+                </Stack>
 
                 <TextField
                   select
@@ -360,19 +362,17 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                 </Button>
               </Stack>
             </Paper>
-          </Grid>
+          </Box>
         ) : null}
 
-        <Grid item xs={12} lg={canManageGrades ? 7 : 12}>
-          <Stack spacing={2.5}>
-            <EntityTable
-              title="Lista ocen"
-              rows={visibleGrades}
-              columns={gradeColumns}
-            />
-          </Stack>
-        </Grid>
-      </Grid>
+        <Box sx={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
+          <EntityTable
+            title="Lista ocen"
+            rows={visibleGrades}
+            columns={gradeColumns}
+          />
+        </Box>
+      </Box>
 
       <Dialog open={showEditDialog} onClose={() => setShowEditDialog(false)} maxWidth="sm" fullWidth>
         <form onSubmit={(event) => { void handleEditSubmit(event); }}>
@@ -429,8 +429,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                 ))}
               </TextField>
 
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+              <Stack direction="row" spacing={2}>
                   <TextField
                     label="Ocena"
                     type="number"
@@ -440,8 +439,6 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                     required
                     fullWidth
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
                   <TextField
                     label="Waga"
                     type="number"
@@ -451,8 +448,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                     required
                     fullWidth
                   />
-                </Grid>
-              </Grid>
+              </Stack>
 
               <TextField
                 select

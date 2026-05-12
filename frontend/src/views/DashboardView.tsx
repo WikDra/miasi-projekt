@@ -15,13 +15,37 @@ import { AttendanceSection } from './AttendanceSection';
 import { ReportsView } from './ReportsView';
 import { MessagesSection } from './MessagesSection';
 import { createUser, createStudent, createClassEntity, updateUser, createSubject, updateSubject, deleteSubject, deleteUser, updateClassEntity, deleteClassEntity, updateStudent, deleteStudent } from '../api';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { Card, CardContent } from '@mui/material';
 
 interface DashboardViewProps {
   bootstrap: BootstrapResponse;
   activeSection: SectionKey;
   session: Session;
   onRefreshBootstrap: (preserveSessionOnFailure?: boolean) => Promise<boolean>;
+}
+
+function DashboardSectionCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        width: '100%',
+        minWidth: 0,
+        height: '100%',
+        borderRadius: 2,
+        border: '1px solid rgba(17, 100, 102, 0.12)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,250,242,0.88))',
+      }}
+    >
+      <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+        <Typography variant="h6">{title}</Typography>
+        <Box sx={{ mt: 2 }}>
+          {children}
+        </Box>
+      </CardContent>
+    </Card>
+  );
 }
 
 function formatTimeLabel(value: string) {
@@ -367,7 +391,7 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
   const canManageSubjects = session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY'].includes(role));
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={4} sx={{ maxWidth: '100%', overflow: 'hidden' }}>
       <Box>
         <Typography variant="h3">Pulpit</Typography>
       </Box>
@@ -394,44 +418,38 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
       </Box>
 
       {activeSection === 'dashboard' ? (
-        <Grid container spacing={2.5}>
-          <Grid item xs={12} lg={6} sx={{ minWidth: 0 }}>
-            <Box sx={{
-              p: 3, borderRadius: 4, border: '1px solid rgba(17, 100, 102, 0.12)',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,250,242,0.84))',
-            }}>
-              <Typography variant="h6">Szybki podgląd</Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 2 }}>
-                <Chip label={`${bootstrap.summary.teachers} nauczyciel`} color="primary" />
-                <Chip label={`${bootstrap.summary.students} uczeń`} color="secondary" />
-                <Chip label={`${bootstrap.summary.grades} ocen`} variant="outlined" />
-                <Chip label={`${bootstrap.summary.attendanceRecords} wpisów frekwencji`} variant="outlined" />
-              </Stack>
-              <Stack spacing={1.5} sx={{ mt: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Najbliższe zajęcia: {bootstrap.classSessions[0] ? `${formatDateLabel(bootstrap.classSessions[0].sessionDate)} - ${bootstrap.classSessions[0].topic}` : 'brak'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Ostatnia ocena: {bootstrap.grades[0] ? `${bootstrap.grades[0].decimalValue} z ${subjectById.get(bootstrap.grades[0].subjectId)?.name ?? 'przedmiotu'}` : 'brak'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Ostatnia wiadomość: {bootstrap.messages[0]?.title ?? 'brak'}
-                </Typography>
-              </Stack>
-            </Box>
-          </Grid>
-          <Grid item xs={12} lg={6} sx={{ minWidth: 0 }}>
-            <Box sx={{
-              p: 3, borderRadius: 4, border: '1px solid rgba(17, 100, 102, 0.12)',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,250,242,0.84))',
-            }}>
-              <Typography variant="h6">Legenda ról</Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 2 }}>
-                {bootstrap.roles.map((role) => <Chip key={role.id} label={role.name} />)}
-              </Stack>
-            </Box>
-          </Grid>
-        </Grid>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+            gap: 2.5,
+          }}
+        >
+          <DashboardSectionCard title="Szybki podgląd">
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip label={`${bootstrap.summary.teachers} nauczyciel`} color="primary" />
+              <Chip label={`${bootstrap.summary.students} uczeń`} color="secondary" />
+              <Chip label={`${bootstrap.summary.grades} ocen`} variant="outlined" />
+              <Chip label={`${bootstrap.summary.attendanceRecords} wpisów frekwencji`} variant="outlined" />
+            </Stack>
+            <Stack spacing={1.5} sx={{ mt: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Najbliższe zajęcia: {bootstrap.classSessions[0] ? `${formatDateLabel(bootstrap.classSessions[0].sessionDate)} - ${bootstrap.classSessions[0].topic}` : 'brak'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Ostatnia ocena: {bootstrap.grades[0] ? `${bootstrap.grades[0].decimalValue} z ${subjectById.get(bootstrap.grades[0].subjectId)?.name ?? 'przedmiotu'}` : 'brak'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Ostatnia wiadomość: {bootstrap.messages[0]?.title ?? 'brak'}
+              </Typography>
+            </Stack>
+          </DashboardSectionCard>
+          <DashboardSectionCard title="Legenda ról">
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              {bootstrap.roles.map((role) => <Chip key={role.id} label={role.name} />)}
+            </Stack>
+          </DashboardSectionCard>
+        </Box>
       ) : null}
 
       {activeSection === 'users' ? (

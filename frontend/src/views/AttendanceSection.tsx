@@ -1,5 +1,5 @@
 import {
-  Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, Paper, Stack, TextField, Typography,
+  Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Stack, TextField, Typography,
 } from '@mui/material';
 import { useMemo, useState, type FormEvent } from 'react';
 import { createAttendance, excuseAttendance } from '../api';
@@ -123,14 +123,21 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
   }
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ maxWidth: '100%', overflow: 'hidden' }}>
       <Box><Typography variant="h3">Frekwencja</Typography></Box>
-      <Grid container spacing={2.5}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: canManage ? '5fr 7fr' : '1fr' },
+          gap: 2.5,
+        }}
+      >
         {canManage && (
-          <Grid item xs={12} lg={5}>
+          <Box sx={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
             <Paper elevation={0} sx={{
-              p: 3, border: '1px solid rgba(17,100,102,0.12)',
+              p: { xs: 2, sm: 3 }, border: '1px solid rgba(17,100,102,0.12)',
               background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
+              overflow: 'hidden',
             }}>
               <Typography variant="h6">Rejestruj frekwencję</Typography>
               {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
@@ -160,9 +167,9 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
                 </Button>
               </Stack>
             </Paper>
-          </Grid>
+          </Box>
         )}
-        <Grid item xs={12} lg={canManage ? 7 : 12}>
+        <Box sx={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
           <EntityTable
             title="Lista frekwencji"
             rows={visibleAttendance}
@@ -196,8 +203,8 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
                 },
             ]}
           />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       <Dialog open={excuseDialogOpen} onClose={() => setExcuseDialogOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={(event) => { void handleExcuseSubmit(event); }}>

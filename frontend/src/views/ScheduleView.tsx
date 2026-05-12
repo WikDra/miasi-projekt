@@ -223,7 +223,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
   }
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} sx={{ maxWidth: '100%', overflow: 'hidden' }}>
       <Box>
         <Typography variant="h3">Plan lekcji</Typography>
       </Box>
@@ -232,9 +232,10 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
         <Paper
           elevation={0}
           sx={{
-            p: 3,
+            p: { xs: 2, sm: 3 },
             border: '1px solid rgba(17,100,102,0.12)',
             background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
+            overflow: 'hidden',
           }}
         >
           <Typography variant="h6">{editingLessonId ? 'Edytuj lekcję' : 'Dodaj lekcję'}</Typography>
@@ -348,7 +349,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
             </Stack>
           </Stack>
 
-          <Box sx={{ mt: 3 }}>
+          <Box sx={{ mt: 3, maxWidth: '100%', overflow: 'hidden' }}>
             <EntityTable
               title="Lekcje do zarządzania"
               rows={visibleLessons}
