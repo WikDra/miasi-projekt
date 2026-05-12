@@ -1,23 +1,23 @@
 package com.miasi.school.controller;
 
 import com.miasi.school.dto.BootstrapResponse;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.BootstrapService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-public class DemoController {
+public class BootstrapController {
 
-    private final DemoDataStore demoDataStore;
+    private final BootstrapService bootstrapService;
 
-    public DemoController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public BootstrapController(BootstrapService bootstrapService) {
+        this.bootstrapService = bootstrapService;
     }
 
     @GetMapping("/bootstrap")
     public BootstrapResponse bootstrap() {
-        return demoDataStore.bootstrap();
+        return bootstrapService.bootstrap();
     }
 }

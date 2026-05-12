@@ -3,7 +3,7 @@ package com.miasi.school.controller;
 import com.miasi.school.dto.CreateGradeRequest;
 import com.miasi.school.dto.UpdateGradeRequest;
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.EvaluationService;
 
 import jakarta.validation.Valid;
 
@@ -24,10 +24,10 @@ import java.util.UUID;
 @RequestMapping("/api/grades")
 public class GradeController {
 
-    private final DemoDataStore demoDataStore;
+    private final EvaluationService evaluationService;
 
-    public GradeController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public GradeController(EvaluationService evaluationService) {
+        this.evaluationService = evaluationService;
     }
 
     @PostMapping
@@ -35,7 +35,7 @@ public class GradeController {
             @Valid @RequestBody CreateGradeRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(demoDataStore.createGrade(request, authorization));
+        return ResponseEntity.status(HttpStatus.CREATED).body(evaluationService.createGrade(request, authorization));
     }
 
     @PutMapping("/{gradeId}")
@@ -44,7 +44,7 @@ public class GradeController {
             @Valid @RequestBody UpdateGradeRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.ok(demoDataStore.updateGrade(gradeId, request, authorization));
+        return ResponseEntity.ok(evaluationService.updateGrade(gradeId, request, authorization));
     }
 
     @DeleteMapping("/{gradeId}")
@@ -52,7 +52,7 @@ public class GradeController {
             @PathVariable UUID gradeId,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        demoDataStore.deleteGrade(gradeId, authorization);
+        evaluationService.deleteGrade(gradeId, authorization);
         return ResponseEntity.noContent().build();
     }
 }

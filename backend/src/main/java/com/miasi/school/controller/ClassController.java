@@ -3,7 +3,7 @@ package com.miasi.school.controller;
 import com.miasi.school.dto.CreateClassRequest;
 import com.miasi.school.dto.UpdateClassRequest;
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.AcademicService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +15,10 @@ import java.util.UUID;
 @RequestMapping("/api/classes")
 public class ClassController {
 
-    private final DemoDataStore demoDataStore;
+    private final AcademicService academicService;
 
-    public ClassController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public ClassController(AcademicService academicService) {
+        this.academicService = academicService;
     }
 
     @PostMapping
@@ -27,7 +27,7 @@ public class ClassController {
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(demoDataStore.createClass(request, authorization));
+                .body(academicService.createClass(request, authorization));
     }
 
     @PutMapping("/{id}")
@@ -36,7 +36,7 @@ public class ClassController {
             @Valid @RequestBody UpdateClassRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.ok(demoDataStore.updateClass(id, request, authorization));
+        return ResponseEntity.ok(academicService.updateClass(id, request, authorization));
     }
 
     @DeleteMapping("/{id}")
@@ -44,7 +44,7 @@ public class ClassController {
             @PathVariable UUID id,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        demoDataStore.deleteClass(id, authorization);
+        academicService.deleteClass(id, authorization);
         return ResponseEntity.noContent().build();
     }
 }

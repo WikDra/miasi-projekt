@@ -7,7 +7,7 @@ Aplikacja do obsługi szkoły z logowaniem, pulpitem, rolami użytkowników i pe
 - logowanie i autoryzacja na poziomie ról,
 - pulpit z przeglądem danych,
 - zarządzanie użytkownikami, klasami, uczniami i przedmiotami,
-- plan lekcji i lekcje,
+- plan lekcji i zarządzanie sesjami lekcyjnymi,
 - oceny z możliwością dodawania, edycji i usuwania,
 - frekwencja i usprawiedliwianie nieobecności,
 - wiadomości, powiadomienia i materiały dydaktyczne,
@@ -15,7 +15,7 @@ Aplikacja do obsługi szkoły z logowaniem, pulpitem, rolami użytkowników i pe
 
 ## Stack
 
-- Backend: Java 21, Spring Boot 3.4.4, JDBC, Validation,
+- Backend: Java 21, Spring Boot 3.4.4, Spring Data JPA, Validation,
 - Frontend: React 18, TypeScript, Vite, Material UI 6,
 - Baza: PostgreSQL 16 w Dockerze,
 - Testy backendu: H2 w pamięci.
@@ -78,7 +78,7 @@ docker compose down -v
 
 ## Jak to działa
 
-Stan aplikacji jest przechowywany w jednej tabeli `school_state` jako JSON. To upraszcza lokalne uruchomienie bez Flyway i bez ręcznego tworzenia wielu tabel, a testy nadal korzystają z H2 w pamięci.
+System opiera się na **bazie relacyjnej PostgreSQL** z wykorzystaniem **Spring Data JPA**. Dane są znormalizowane i rozdzielone na dedykowane encje (użytkownicy, oceny, lekcje itd.). Logika biznesowa jest odseparowana w warstwie serwisowej (Auth, Academic, Evaluation itd.). Przy pierwszym uruchomieniu system automatycznie seeduje bazę danymi testowymi, jeśli jest pusta.
 
 ## Skrypty
 
@@ -103,7 +103,7 @@ npm run preview
 
 ## Struktura projektu
 
-- `backend/` - aplikacja Spring Boot i logika domenowa,
+- `backend/` - aplikacja Spring Boot, warstwa serwisowa i encje JPA,
 - `frontend/` - aplikacja React/Vite,
 - `docker-compose.yml` - lokalny PostgreSQL,
 - `README.md` - dokumentacja uruchomienia i konfiguracji.
@@ -119,6 +119,7 @@ npm run preview
 
 ## Uwagi
 
+- Aby rozpocząć wpisywanie frekwencji, nauczyciel musi „rozpocząć lekcję” z poziomu widoku **Plan lekcji**.
 - Backend testujesz lokalnie na H2, więc nie musisz mieć uruchomionego Dockera do samego `mvn test`.
 - Produkcyjny/devowy tryb aplikacji zakłada dostępny PostgreSQL.
 - Jeśli backend nie startuje, najpierw sprawdź czy działa kontener `postgres` i czy port `5432` nie jest zajęty.

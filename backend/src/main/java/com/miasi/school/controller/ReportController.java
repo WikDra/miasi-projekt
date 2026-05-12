@@ -2,7 +2,7 @@ package com.miasi.school.controller;
 
 import com.miasi.school.dto.AttendanceReportEntry;
 import com.miasi.school.dto.GradeReportEntry;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.ReportService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,23 +11,23 @@ import java.util.List;
 @RequestMapping("/api/reports")
 public class ReportController {
 
-    private final DemoDataStore demoDataStore;
+    private final ReportService reportService;
 
-    public ReportController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public ReportController(ReportService reportService) {
+        this.reportService = reportService;
     }
 
     @GetMapping("/attendance")
     public List<AttendanceReportEntry> attendanceReport(
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return demoDataStore.getAttendanceReport(authorization);
+        return reportService.getAttendanceReport(authorization);
     }
 
     @GetMapping("/grades")
     public List<GradeReportEntry> gradesReport(
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return demoDataStore.getGradesReport(authorization);
+        return reportService.getGradesReport(authorization);
     }
 }

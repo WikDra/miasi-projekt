@@ -1,7 +1,7 @@
 package com.miasi.school.controller;
 
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.MessagingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,10 +11,10 @@ import java.util.UUID;
 @RequestMapping("/api/notifications")
 public class NotificationController {
 
-    private final DemoDataStore demoDataStore;
+    private final MessagingService messagingService;
 
-    public NotificationController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public NotificationController(MessagingService messagingService) {
+        this.messagingService = messagingService;
     }
 
     @PatchMapping("/{id}/read")
@@ -22,6 +22,6 @@ public class NotificationController {
             @PathVariable UUID id,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.ok(demoDataStore.markNotificationAsRead(id, authorization));
+        return ResponseEntity.ok(messagingService.markNotificationAsRead(id, authorization));
     }
 }

@@ -3,7 +3,7 @@ package com.miasi.school.controller;
 import com.miasi.school.dto.CreateUserRequest;
 import com.miasi.school.dto.UpdateUserRequest;
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +15,10 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final DemoDataStore demoDataStore;
+    private final UserService userService;
 
-    public UserController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @PostMapping
@@ -27,7 +27,7 @@ public class UserController {
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(demoDataStore.createUser(request, authorization));
+                .body(userService.createUser(request, authorization));
     }
 
     @PutMapping("/{id}")
@@ -36,7 +36,7 @@ public class UserController {
             @Valid @RequestBody UpdateUserRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.ok(demoDataStore.updateUser(id, request, authorization));
+        return ResponseEntity.ok(userService.updateUser(id, request, authorization));
     }
 
     @DeleteMapping("/{id}")
@@ -44,7 +44,7 @@ public class UserController {
             @PathVariable UUID id,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        demoDataStore.deleteUser(id, authorization);
+        userService.deleteUser(id, authorization);
         return ResponseEntity.noContent().build();
     }
 }

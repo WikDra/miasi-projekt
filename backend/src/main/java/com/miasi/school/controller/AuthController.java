@@ -2,7 +2,7 @@ package com.miasi.school.controller;
 
 import com.miasi.school.dto.LoginRequest;
 import com.miasi.school.dto.LoginResponse;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,14 +14,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final DemoDataStore demoDataStore;
+    private final AuthService authService;
 
-    public AuthController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(demoDataStore.authenticate(request));
+        return ResponseEntity.ok(authService.authenticate(request));
     }
 }

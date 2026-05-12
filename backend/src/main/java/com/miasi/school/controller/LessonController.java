@@ -3,7 +3,7 @@ package com.miasi.school.controller;
 import com.miasi.school.dto.CreateLessonRequest;
 import com.miasi.school.dto.UpdateLessonRequest;
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.AcademicService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +15,10 @@ import java.util.UUID;
 @RequestMapping("/api/lessons")
 public class LessonController {
 
-    private final DemoDataStore demoDataStore;
+    private final AcademicService academicService;
 
-    public LessonController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public LessonController(AcademicService academicService) {
+        this.academicService = academicService;
     }
 
     @PostMapping
@@ -26,7 +26,7 @@ public class LessonController {
             @Valid @RequestBody CreateLessonRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(demoDataStore.createLesson(request, authorization));
+        return ResponseEntity.status(HttpStatus.CREATED).body(academicService.createLesson(request, authorization));
     }
 
     @PutMapping("/{lessonId}")
@@ -35,7 +35,7 @@ public class LessonController {
             @Valid @RequestBody UpdateLessonRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.ok(demoDataStore.updateLesson(lessonId, request, authorization));
+        return ResponseEntity.ok(academicService.updateLesson(lessonId, request, authorization));
     }
 
     @DeleteMapping("/{lessonId}")
@@ -43,7 +43,7 @@ public class LessonController {
             @PathVariable UUID lessonId,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        demoDataStore.deleteLesson(lessonId, authorization);
+        academicService.deleteLesson(lessonId, authorization);
         return ResponseEntity.noContent().build();
     }
 }

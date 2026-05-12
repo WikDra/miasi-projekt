@@ -3,7 +3,7 @@ package com.miasi.school.controller;
 import com.miasi.school.dto.CreateAttendanceRequest;
 import com.miasi.school.dto.ExcuseAttendanceRequest;
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.EvaluationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +15,10 @@ import java.util.UUID;
 @RequestMapping("/api/attendance")
 public class AttendanceController {
 
-    private final DemoDataStore demoDataStore;
+    private final EvaluationService evaluationService;
 
-    public AttendanceController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public AttendanceController(EvaluationService evaluationService) {
+        this.evaluationService = evaluationService;
     }
 
     @PostMapping
@@ -27,7 +27,7 @@ public class AttendanceController {
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(demoDataStore.createAttendance(request, authorization));
+                .body(evaluationService.createAttendance(request, authorization));
     }
 
     @PatchMapping("/{attendanceId}/excuse")
@@ -36,6 +36,6 @@ public class AttendanceController {
             @Valid @RequestBody ExcuseAttendanceRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.ok(demoDataStore.excuseAttendance(attendanceId, request, authorization));
+        return ResponseEntity.ok(evaluationService.excuseAttendance(attendanceId, request, authorization));
     }
 }

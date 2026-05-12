@@ -2,7 +2,7 @@ package com.miasi.school.controller;
 
 import com.miasi.school.dto.CreateMessageRequest;
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.MessagingService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/messages")
 public class MessageController {
 
-    private final DemoDataStore demoDataStore;
+    private final MessagingService messagingService;
 
-    public MessageController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public MessageController(MessagingService messagingService) {
+        this.messagingService = messagingService;
     }
 
     @PostMapping
@@ -24,6 +24,6 @@ public class MessageController {
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(demoDataStore.createMessage(request, authorization));
+                .body(messagingService.createMessage(request, authorization));
     }
 }

@@ -3,7 +3,7 @@ package com.miasi.school.controller;
 import com.miasi.school.dto.CreateStudentRequest;
 import com.miasi.school.dto.UpdateStudentRequest;
 import com.miasi.school.model.SchoolDomain;
-import com.miasi.school.service.DemoDataStore;
+import com.miasi.school.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +15,10 @@ import java.util.UUID;
 @RequestMapping("/api/students")
 public class StudentController {
 
-    private final DemoDataStore demoDataStore;
+    private final UserService userService;
 
-    public StudentController(DemoDataStore demoDataStore) {
-        this.demoDataStore = demoDataStore;
+    public StudentController(UserService userService) {
+        this.userService = userService;
     }
 
     @PostMapping
@@ -27,7 +27,7 @@ public class StudentController {
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(demoDataStore.createStudent(request, authorization));
+                .body(userService.createStudent(request, authorization));
     }
 
     @PutMapping("/{id}")
@@ -36,7 +36,7 @@ public class StudentController {
             @Valid @RequestBody UpdateStudentRequest request,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        return ResponseEntity.ok(demoDataStore.updateStudent(id, request, authorization));
+        return ResponseEntity.ok(userService.updateStudent(id, request, authorization));
     }
 
     @DeleteMapping("/{id}")
@@ -44,7 +44,7 @@ public class StudentController {
             @PathVariable UUID id,
             @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
-        demoDataStore.deleteStudent(id, authorization);
+        userService.deleteStudent(id, authorization);
         return ResponseEntity.noContent().build();
     }
 }

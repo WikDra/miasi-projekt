@@ -16,9 +16,7 @@ public final class SchoolDomain {
     public record Role(UUID id, String name) {
     }
 
-    public record User(UUID id, String firstName, String lastName, String email, String passwordHash, String status,
-                       List<String> roles) {
-
+    public record User(UUID id, String firstName, String lastName, String email, String status, List<String> roles) {
         public String fullName() {
             return firstName + " " + lastName;
         }
@@ -53,14 +51,10 @@ public final class SchoolDomain {
     }
 
     public enum AttendanceStatus {
-        PRESENT,
-        ABSENT,
-        LATE,
-        EXCUSED
+        PRESENT, ABSENT, LATE, EXCUSED
     }
 
-    public record AttendanceRecord(UUID id, UUID sessionId, UUID studentId, AttendanceStatus status,
-                                   String excuseComment) {
+    public record AttendanceRecord(UUID id, UUID sessionId, UUID studentId, AttendanceStatus status, String excuseComment) {
     }
 
     public record GradeRecord(UUID id, UUID studentId, UUID teacherId, UUID subjectId, BigDecimal decimalValue,
