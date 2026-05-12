@@ -25,7 +25,9 @@ export function LoginView({ onLogin, loading, error }: LoginViewProps) {
         alignItems: 'center',
         justifyContent: 'center',
         p: { xs: 3, md: 6 },
-        background: 'linear-gradient(145deg, rgba(17,100,102,0.14), rgba(209,154,102,0.12))',
+        background: (theme) => theme.palette.mode === 'light'
+          ? 'linear-gradient(145deg, rgba(17,100,102,0.14), rgba(209,154,102,0.12))'
+          : 'linear-gradient(145deg, rgba(44,147,150,0.14), rgba(183,127,69,0.12))',
       }}
     >
       <Paper
@@ -34,8 +36,9 @@ export function LoginView({ onLogin, loading, error }: LoginViewProps) {
           width: '100%',
           maxWidth: 480,
           p: { xs: 3, md: 4 },
-          border: '1px solid rgba(17, 100, 102, 0.12)',
-          backgroundColor: 'rgba(255,250,242,0.94)',
+          border: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: (theme) => theme.palette.mode === 'light' ? 'rgba(255,250,242,0.94)' : 'rgba(18,18,18,0.94)',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -59,7 +62,7 @@ export function LoginView({ onLogin, loading, error }: LoginViewProps) {
             void onLogin({ email, password });
           }}
         >
-          <TextField
+          <TextField id="email_1" name="email_1"
             label="Email"
             type="email"
             value={email}
@@ -67,7 +70,7 @@ export function LoginView({ onLogin, loading, error }: LoginViewProps) {
             fullWidth
             required
           />
-          <TextField
+          <TextField id="hasło_2" name="hasło_2"
             label="Hasło"
             type="password"
             value={password}
@@ -80,7 +83,7 @@ export function LoginView({ onLogin, loading, error }: LoginViewProps) {
           </Button>
         </Stack>
 
-        <Paper variant="outlined" sx={{ mt: 3, p: 2.5, backgroundColor: 'rgba(255,255,255,0.72)' }}>
+        <Paper variant="outlined" sx={{ mt: 3, p: 2.5, backgroundColor: (theme) => theme.palette.mode === 'light' ? 'rgba(255,255,255,0.72)' : 'rgba(30,30,30,0.72)' }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             Konta dostępu
           </Typography>

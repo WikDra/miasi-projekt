@@ -38,8 +38,10 @@ export function EntityTable<T extends { id?: string }>({
       sx={{
         width: '100%',
         minWidth: 0,
-        border: '1px solid rgba(17, 100, 102, 0.12)',
+        border: '1px solid',
+        borderColor: 'divider',
         overflow: 'hidden',
+        background: (theme) => theme.palette.mode === 'light' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(30, 30, 30, 0.6)',
       }}
     >
       <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>

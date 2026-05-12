@@ -1,8 +1,12 @@
 import {
-  AppBar, Avatar, Box, Divider, Drawer, IconButton, List, ListItemButton,
+  AppBar, Avatar, Box, Button, Drawer, IconButton, List, ListItem, ListItemButton,
   ListItemIcon, ListItemText, Stack, Toolbar, Typography, useMediaQuery,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import { ThemeContext } from '../theme';
+import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
+import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
+import { useContext } from 'react';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
@@ -49,6 +53,7 @@ const allNavItems: NavItem[] = [
 export function Shell({ session, activeSection, onNavigate, onLogout, children }: ShellProps) {
   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { mode, toggleMode } = useContext(ThemeContext);
 
   const navItems = useMemo(
     () => allNavItems.filter((item) => {
@@ -61,53 +66,79 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
   const activeNavItem = navItems.find((item) => item.key === activeSection);
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5" sx={{ mt: 0.5 }}>
-          Panel główny
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 3, pb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main', letterSpacing: '-0.02em' }}>
+          School Nexus
         </Typography>
       </Box>
-
-      <Divider />
-
-      <List sx={{ px: 1, py: 2, flex: 1 }}>
-        {navItems.map((item) => (
-          <ListItemButton
-            key={item.key}
-            selected={activeSection === item.key}
-            onClick={() => {
-              onNavigate(item.key);
-              setMobileOpen(false);
-            }}
-            sx={{ borderRadius: 3, mx: 1, mb: 0.75 }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} />
-          </ListItemButton>
-        ))}
-      </List>
-
-      <Box sx={{ p: 2.5 }}>
-        <ListItemButton onClick={onLogout} sx={{ mt: 2, borderRadius: 3 }}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <LogoutRoundedIcon />
-          </ListItemIcon>
-          <ListItemText primary="Wyloguj" />
-        </ListItemButton>
+      <Box sx={{ flex: 1, px: 2, overflowY: 'auto' }}>
+        <List sx={{ pt: 0 }}>
+          {navItems.map((item) => (
+            <ListItem key={item.key} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                selected={activeSection === item.key}
+                onClick={() => {
+                  onNavigate(item.key);
+                  if (isMobile) setMobileOpen(false);
+                }}
+                sx={{
+                  borderRadius: 2,
+                  '&.Mui-selected': {
+                    backgroundColor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { backgroundColor: 'primary.dark' },
+                    '& .MuiListItemIcon-root': { color: 'inherit' },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: activeSection === item.key ? 'inherit' : 'text.secondary' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: activeSection === item.key ? 700 : 500 }} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+      <Box sx={{ p: 2 }}>
+        <Button 
+          variant="text" 
+          color="inherit" 
+          fullWidth 
+          startIcon={<LogoutRoundedIcon />} 
+          onClick={onLogout} 
+          sx={{ 
+            opacity: 0.8, 
+            transition: (theme) => theme.transitions.create(['opacity', 'color', 'background-color']),
+            '&:hover': { opacity: 1, color: 'error.main' } 
+          }}
+        >
+          Wyloguj
+        </Button>
       </Box>
     </Box>
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', overflow: 'hidden', maxWidth: '100vw' }}>
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      overflow: 'hidden',
+      maxWidth: '100vw',
+      background: (theme) => theme.palette.mode === 'light'
+        ? 'radial-gradient(circle at top left, rgba(17, 100, 102, 0.18), transparent 26%), radial-gradient(circle at top right, rgba(209, 154, 102, 0.18), transparent 24%), linear-gradient(180deg, #f7f2e8 0%, #efe8dc 100%)'
+        : 'radial-gradient(circle at top left, rgba(44, 147, 150, 0.15), transparent 26%), radial-gradient(circle at top right, rgba(183, 127, 69, 0.15), transparent 24%), linear-gradient(180deg, #121212 0%, #0a0a0a 100%)',
+    }}>
       <AppBar
         position="fixed"
         color="transparent"
         elevation={0}
         sx={{
           backdropFilter: 'blur(18px)',
-          borderBottom: '1px solid rgba(17, 100, 102, 0.12)',
-          backgroundColor: 'rgba(255, 250, 242, 0.8)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: (theme) => theme.palette.mode === 'light' ? 'rgba(255, 250, 242, 0.8)' : 'rgba(18, 18, 18, 0.8)',
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
         }}
@@ -122,6 +153,9 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
             <Typography variant="h6" noWrap>{activeSection === 'dashboard' ? 'Pulpit' : activeNavItem?.label ?? 'Pulpit'}</Typography>
           </Box>
           <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0, flexShrink: 0 }}>
+            <IconButton onClick={toggleMode} color="inherit">
+              {mode === 'light' ? <DarkModeRoundedIcon /> : <LightModeRoundedIcon />}
+            </IconButton>
             <Avatar sx={{ bgcolor: 'secondary.main' }}>{session.fullName.slice(0, 1)}</Avatar>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle2" noWrap sx={{ maxWidth: { xs: '30vw', sm: 220 } }}>
@@ -149,8 +183,11 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
             '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
-              borderRight: '1px solid rgba(17, 100, 102, 0.12)',
-              background: 'linear-gradient(180deg, rgba(255,250,242,0.98), rgba(243,239,231,0.98))',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              background: (theme) => theme.palette.mode === 'light'
+                ? 'linear-gradient(180deg, rgba(255,250,242,0.98), rgba(243,239,231,0.98))'
+                : 'linear-gradient(180deg, rgba(30,30,30,0.98), rgba(18,18,18,0.98))',
             },
           }}
         >

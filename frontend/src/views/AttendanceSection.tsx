@@ -5,6 +5,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { createAttendance, excuseAttendance } from '../api';
 import { EntityTable } from '../components/EntityTable';
 import type { BootstrapResponse, Session } from '../types';
+import { formPaperSx } from '../utils';
 
 interface AttendanceSectionProps {
   bootstrap: BootstrapResponse;
@@ -134,33 +135,29 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
       >
         {canManage && (
           <Box sx={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
-            <Paper elevation={0} sx={{
-              p: { xs: 2, sm: 3 }, border: '1px solid rgba(17,100,102,0.12)',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
-              overflow: 'hidden',
-            }}>
+            <Paper elevation={0} sx={formPaperSx}>
               <Typography variant="h6">Rejestruj frekwencję</Typography>
               {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
               {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}
               <Stack component="form" spacing={2} sx={{ mt: 2.5 }} onSubmit={(e) => { void handleSubmit(e); }}>
-                <TextField select label="Sesja lekcyjna" value={sessionId}
+                <TextField id="sesja_lekcyjna_1" name="sesja_lekcyjna_1" select label="Sesja lekcyjna" value={sessionId}
                   onChange={(e) => setSessionId(e.target.value)} required fullWidth>
                   {bootstrap.classSessions.map((s) => (
                     <MenuItem key={s.id} value={s.id}>{s.topic} ({s.sessionDate})</MenuItem>
                   ))}
                 </TextField>
-                <TextField select label="Uczeń" value={studentId}
+                <TextField id="uczeń_2" name="uczeń_2" select label="Uczeń" value={studentId}
                   onChange={(e) => setStudentId(e.target.value)} required fullWidth>
                   {bootstrap.students.map((s) => {
                     const u = userById.get(s.userId);
                     return <MenuItem key={s.id} value={s.id}>{u ? `${u.firstName} ${u.lastName}` : s.studentNumber}</MenuItem>;
                   })}
                 </TextField>
-                <TextField select label="Status" value={status}
+                <TextField id="status_3" name="status_3" select label="Status" value={status}
                   onChange={(e) => setStatus(e.target.value)} required fullWidth>
                   {attendanceStatuses.map((s) => <MenuItem key={s} value={s}>{statusLabels[s]}</MenuItem>)}
                 </TextField>
-                <TextField label="Komentarz" value={excuseComment}
+                <TextField id="komentarz_4" name="komentarz_4" label="Komentarz" value={excuseComment}
                   onChange={(e) => setExcuseComment(e.target.value)} fullWidth />
                 <Button type="submit" variant="contained" size="large" disabled={loading}>
                   {loading ? 'Zapisywanie...' : 'Zapisz'}
@@ -212,7 +209,7 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
           <DialogContent>
             {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
             <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
+              <TextField id="komentarz_5" name="komentarz_5"
                 label="Komentarz"
                 value={excuseDialogText}
                 onChange={(event) => setExcuseDialogText(event.target.value)}

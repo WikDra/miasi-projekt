@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { createLesson, deleteLesson, updateLesson } from '../api';
 import { EntityTable } from '../components/EntityTable';
 import type { BootstrapResponse, Session } from '../types';
+import { formPaperSx } from '../utils';
 
 interface ScheduleViewProps {
   bootstrap: BootstrapResponse;
@@ -37,13 +38,25 @@ function formatTime(value: string) {
     : parsed.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
 }
 
-const slotColors = [
-  'rgba(17,100,102,0.12)',
-  'rgba(209,154,102,0.14)',
-  'rgba(75,123,236,0.12)',
-  'rgba(42,157,143,0.14)',
-  'rgba(180,80,80,0.10)',
-];
+const getSlotColor = (theme: any, index: number) => {
+  const isDark = theme.palette.mode === 'dark';
+  const lightColors = [
+    'rgba(17,100,102,0.12)',
+    'rgba(209,154,102,0.14)',
+    'rgba(75,123,236,0.12)',
+    'rgba(42,157,143,0.14)',
+    'rgba(180,80,80,0.10)',
+  ];
+  const darkColors = [
+    'rgba(44,147,150,0.15)',
+    'rgba(183,127,69,0.15)',
+    'rgba(100,140,240,0.15)',
+    'rgba(60,180,165,0.15)',
+    'rgba(200,100,100,0.15)',
+  ];
+  const colors = isDark ? darkColors : lightColors;
+  return colors[index % colors.length];
+};
 
 interface LessonFormState {
   classId: string;
@@ -229,15 +242,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
       </Box>
 
       {canManageLessons ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, sm: 3 },
-            border: '1px solid rgba(17,100,102,0.12)',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
-            overflow: 'hidden',
-          }}
-        >
+        <Paper elevation={0} sx={formPaperSx}>
           <Typography variant="h6">{editingLessonId ? 'Edytuj lekcję' : 'Dodaj lekcję'}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1.2 }}>
             Zarządzaj planem tygodniowym z tego miejsca.
@@ -247,7 +252,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
           {formSuccess ? <Alert severity="success" sx={{ mt: 2.5 }}>{formSuccess}</Alert> : null}
 
           <Stack component="form" spacing={2} sx={{ mt: 3 }} onSubmit={(event) => { void handleLessonSubmit(event); }}>
-            <TextField
+            <TextField id="klasa_1" name="klasa_1"
               select
               label="Klasa"
               value={lessonForm.classId}
@@ -260,7 +265,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
               ))}
             </TextField>
 
-            <TextField
+            <TextField id="nauczyciel_2" name="nauczyciel_2"
               select
               label="Nauczyciel"
               value={lessonForm.teacherId}
@@ -278,7 +283,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
               })}
             </TextField>
 
-            <TextField
+            <TextField id="przedmiot_3" name="przedmiot_3"
               select
               label="Przedmiot"
               value={lessonForm.subjectId}
@@ -291,7 +296,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
               ))}
             </TextField>
 
-            <TextField
+            <TextField id="dzień_tygodnia_4" name="dzień_tygodnia_4"
               select
               label="Dzień tygodnia"
               value={lessonForm.dayOfWeek}
@@ -305,7 +310,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
             </TextField>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
-              <TextField
+              <TextField id="start_5" name="start_5"
                 label="Start"
                 type="time"
                 value={lessonForm.startTime}
@@ -314,7 +319,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
                 fullWidth
                 InputLabelProps={{ shrink: true }}
               />
-              <TextField
+              <TextField id="koniec_6" name="koniec_6"
                 label="Koniec"
                 type="time"
                 value={lessonForm.endTime}
@@ -325,7 +330,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
               />
             </Box>
 
-            <TextField
+            <TextField id="sala_7" name="sala_7"
               label="Sala"
               value={lessonForm.roomNumber}
               onChange={(event) => setLessonForm((current) => ({ ...current, roomNumber: event.target.value }))}
@@ -381,7 +386,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
       ) : null}
 
       {visibleClassIds.length > 1 ? (
-        <TextField
+        <TextField id="klasa_8" name="klasa_8"
           select
           label="Klasa"
           value={selectedClassId}
@@ -404,9 +409,8 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
             key={day}
             elevation={0}
             sx={{
-              p: 2,
-              border: '1px solid rgba(17,100,102,0.12)',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
+              ...formPaperSx,
+              p: { xs: 2, sm: 2 },
             }}
           >
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
@@ -422,8 +426,9 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
                     sx={{
                       p: 1.5,
                       borderRadius: 2,
-                      backgroundColor: slotColors[(dayIndex + index) % slotColors.length],
-                      border: '1px solid rgba(17,100,102,0.08)',
+                      backgroundColor: (theme) => getSlotColor(theme, dayIndex + index),
+                      border: '1px solid',
+                      borderColor: 'divider',
                     }}
                   >
                     <Typography variant="subtitle2">

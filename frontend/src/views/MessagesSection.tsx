@@ -13,9 +13,7 @@ interface MessagesSectionProps {
   onRefreshBootstrap: (preserveSessionOnFailure?: boolean) => Promise<boolean>;
 }
 
-function formatDateLabel(value: string) {
-  return new Date(value).toLocaleDateString('pl-PL');
-}
+import { formatDateLabel, formPaperSx } from '../utils';
 
 export function MessagesSection({ bootstrap, session, onRefreshBootstrap }: MessagesSectionProps) {
   const userById = useMemo(() => new Map(bootstrap.users.map((u) => [u.id, u])), [bootstrap.users]);
@@ -76,23 +74,19 @@ export function MessagesSection({ bootstrap, session, onRefreshBootstrap }: Mess
         }}
       >
         <Box sx={{ minWidth: 0 }}>
-          <Paper elevation={0} sx={{
-            width: '100%',
-            p: 3, border: '1px solid rgba(17,100,102,0.12)',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
-          }}>
+          <Paper elevation={0} sx={{ width: '100%', ...formPaperSx }}>
             <Typography variant="h6">Wyślij wiadomość</Typography>
             {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
             {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}
             <Stack component="form" spacing={2} sx={{ mt: 2.5 }} onSubmit={(e) => { void handleSubmit(e); }}>
-              <TextField select label="Odbiorca" value={recipientId}
+              <TextField id="odbiorca_1" name="odbiorca_1" select label="Odbiorca" value={recipientId}
                 onChange={(e) => setRecipientId(e.target.value)} required fullWidth>
                 {bootstrap.users.filter((u) => u.id !== session.userId).map((u) => (
                   <MenuItem key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.roles.join(', ')})</MenuItem>
                 ))}
               </TextField>
-              <TextField label="Tytuł" value={title} onChange={(e) => setTitle(e.target.value)} required fullWidth />
-              <TextField label="Treść" value={content} onChange={(e) => setContent(e.target.value)}
+              <TextField id="tytuł_2" name="tytuł_2" label="Tytuł" value={title} onChange={(e) => setTitle(e.target.value)} required fullWidth />
+              <TextField id="treść_3" name="treść_3" label="Treść" value={content} onChange={(e) => setContent(e.target.value)}
                 multiline minRows={3} required fullWidth />
               <Button type="submit" variant="contained" size="large" disabled={loading}>
                 {loading ? 'Wysyłanie...' : 'Wyślij'}

@@ -53,9 +53,10 @@ export function ReportsView({ session }: ReportsViewProps) {
       <Box><Typography variant="h3">Raporty</Typography></Box>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-        <Card sx={{
-          border: '1px solid rgba(17,100,102,0.12)',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,250,242,0.88))',
+        <Card elevation={0} sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          background: (theme) => theme.palette.mode === 'light' ? 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,250,242,0.88))' : 'linear-gradient(180deg, rgba(30,30,30,0.96), rgba(18,18,18,0.88))',
         }}>
           <CardContent>
             <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 2 }}>
@@ -64,9 +65,10 @@ export function ReportsView({ session }: ReportsViewProps) {
             <Typography variant="h3">{avgAttendance}%</Typography>
           </CardContent>
         </Card>
-        <Card sx={{
-          border: '1px solid rgba(17,100,102,0.12)',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,250,242,0.88))',
+        <Card elevation={0} sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          background: (theme) => theme.palette.mode === 'light' ? 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,250,242,0.88))' : 'linear-gradient(180deg, rgba(30,30,30,0.96), rgba(18,18,18,0.88))',
         }}>
           <CardContent>
             <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 2 }}>

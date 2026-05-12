@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { createGrade, deleteGrade, updateGrade } from '../api';
 import { EntityTable } from '../components/EntityTable';
 import type { BootstrapResponse, Session } from '../types';
+import { formatDateLabel, formPaperSx } from '../utils';
 
 interface GradesSectionProps {
   bootstrap: BootstrapResponse;
@@ -34,10 +35,6 @@ interface GradeFormState {
 }
 
 const gradeTypes = ['SPRAWDZIAN', 'KARTKÓWKA', 'ODPOWIEDŹ', 'PRACA DOMOWA', 'AKTYWNOŚĆ'];
-
-function formatDateLabel(value: string) {
-  return new Date(value).toLocaleDateString('pl-PL');
-}
 
 function getInitialForm(bootstrap: BootstrapResponse, currentUserId: string): GradeFormState {
   const currentTeacherId = bootstrap.teachers.find((teacher) => teacher.userId === currentUserId)?.id ?? bootstrap.teachers[0]?.id ?? '';
@@ -247,12 +244,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
           <Box sx={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
             <Paper
               elevation={0}
-              sx={{
-                p: { xs: 2, sm: 3 },
-                border: '1px solid rgba(17, 100, 102, 0.12)',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
-                overflow: 'hidden',
-              }}
+              sx={formPaperSx}
             >
               <Typography variant="h6">Wystaw nową ocenę</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1.2 }}>
@@ -263,7 +255,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
               {success ? <Alert severity="success" sx={{ mt: 2.5 }}>{success}</Alert> : null}
 
               <Stack component="form" spacing={2} sx={{ mt: 3 }} onSubmit={(event) => { void handleSubmit(event); }}>
-                <TextField
+                <TextField id="uczeń_1" name="uczeń_1"
                   select
                   label="Uczeń"
                   value={form.studentId}
@@ -281,7 +273,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   })}
                 </TextField>
 
-                <TextField
+                <TextField id="nauczyciel_2" name="nauczyciel_2"
                   select
                   label="Nauczyciel"
                   value={form.teacherId}
@@ -299,7 +291,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   })}
                 </TextField>
 
-                <TextField
+                <TextField id="przedmiot_3" name="przedmiot_3"
                   select
                   label="Przedmiot"
                   value={form.subjectId}
@@ -315,7 +307,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                 </TextField>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField
+                  <TextField id="ocena_4" name="ocena_4"
                     label="Ocena"
                     type="number"
                     inputProps={{ step: 0.5, min: 1, max: 6 }}
@@ -324,7 +316,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                     required
                     fullWidth
                   />
-                  <TextField
+                  <TextField id="waga_5" name="waga_5"
                     label="Waga"
                     type="number"
                     inputProps={{ min: 1, max: 10 }}
@@ -335,7 +327,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   />
                 </Stack>
 
-                <TextField
+                <TextField id="typ_oceny_6" name="typ_oceny_6"
                   select
                   label="Typ oceny"
                   value={form.type}
@@ -348,7 +340,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   ))}
                 </TextField>
 
-                <TextField
+                <TextField id="komentarz_7" name="komentarz_7"
                   label="Komentarz"
                   value={form.comment}
                   onChange={(event) => setForm((current) => ({ ...current, comment: event.target.value }))}
@@ -380,7 +372,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
           <DialogContent>
             {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
             <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
+              <TextField id="uczeń_8" name="uczeń_8"
                 select
                 label="Uczeń"
                 value={editForm.studentId}
@@ -398,7 +390,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                 })}
               </TextField>
 
-              <TextField
+              <TextField id="nauczyciel_9" name="nauczyciel_9"
                 select
                 label="Nauczyciel"
                 value={editForm.teacherId}
@@ -416,7 +408,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                 })}
               </TextField>
 
-              <TextField
+              <TextField id="przedmiot_10" name="przedmiot_10"
                 select
                 label="Przedmiot"
                 value={editForm.subjectId}
@@ -430,7 +422,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
               </TextField>
 
               <Stack direction="row" spacing={2}>
-                  <TextField
+                  <TextField id="ocena_11" name="ocena_11"
                     label="Ocena"
                     type="number"
                     inputProps={{ step: 0.5, min: 1, max: 6 }}
@@ -439,7 +431,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                     required
                     fullWidth
                   />
-                  <TextField
+                  <TextField id="waga_12" name="waga_12"
                     label="Waga"
                     type="number"
                     inputProps={{ min: 1, max: 10 }}
@@ -450,7 +442,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   />
               </Stack>
 
-              <TextField
+              <TextField id="typ_oceny_13" name="typ_oceny_13"
                 select
                 label="Typ oceny"
                 value={editForm.type}
@@ -463,7 +455,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                 ))}
               </TextField>
 
-              <TextField
+              <TextField id="komentarz_14" name="komentarz_14"
                 label="Komentarz"
                 value={editForm.comment}
                 onChange={(event) => setEditForm((current) => ({ ...current, comment: event.target.value }))}
