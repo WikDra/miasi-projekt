@@ -87,18 +87,7 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
         ))}
       </List>
 
-      <Divider />
-
       <Box sx={{ p: 2.5 }}>
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Avatar sx={{ bgcolor: 'primary.main' }}>{session.fullName.slice(0, 1)}</Avatar>
-          <Box>
-            <Typography variant="subtitle2">{session.fullName}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {session.roles.join(', ')}
-            </Typography>
-          </Box>
-        </Stack>
         <ListItemButton onClick={onLogout} sx={{ mt: 2, borderRadius: 3 }}>
           <ListItemIcon sx={{ minWidth: 40 }}>
             <LogoutRoundedIcon />
@@ -132,11 +121,13 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
           <Box sx={{ flex: 1 }}>
             <Typography variant="h6">{activeSection === 'dashboard' ? 'Pulpit' : activeNavItem?.label ?? 'Pulpit'}</Typography>
           </Box>
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
             <Avatar sx={{ bgcolor: 'secondary.main' }}>{session.fullName.slice(0, 1)}</Avatar>
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="subtitle2">{session.fullName}</Typography>
-              <Typography variant="caption" color="text.secondary">
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="subtitle2" noWrap sx={{ maxWidth: { xs: '38vw', sm: 220 } }}>
+                {session.fullName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: { xs: 'none', sm: 'block' }, maxWidth: 220 }}>
                 {session.email}
               </Typography>
             </Box>
