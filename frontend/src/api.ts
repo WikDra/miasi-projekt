@@ -7,11 +7,13 @@ import type {
   CreateGradeRequest,
   CreateMessageRequest,
   CreateLessonRequest,
+  CreateSessionRequest,
   CreateSubjectRequest,
   CreateStudentRequest,
   CreateUserRequest,
   GradeReportEntry,
   GradeRecord,
+  ClassSession,
   LoginRequest,
   LoginResponse,
   Message,
@@ -254,5 +256,13 @@ export async function fetchAttendanceReport(token: string): Promise<AttendanceRe
 export async function fetchGradesReport(token: string): Promise<GradeReportEntry[]> {
   return requestJson<GradeReportEntry[]>('/api/reports/grades', {
     headers: authHeaders(token),
+  });
+}
+
+export async function createClassSession(request: CreateSessionRequest, token: string): Promise<ClassSession> {
+  return requestJson<ClassSession>('/api/sessions', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
   });
 }

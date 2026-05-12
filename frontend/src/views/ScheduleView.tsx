@@ -1,8 +1,8 @@
-import { Alert, Box, Button, Chip, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { createLesson, deleteLesson, updateLesson } from '../api';
+import { createClassSession, createLesson, deleteLesson, updateLesson } from '../api';
 import { EntityTable } from '../components/EntityTable';
-import type { BootstrapResponse, Session } from '../types';
+import type { BootstrapResponse, Lesson, Session } from '../types';
 import { formPaperSx } from '../utils';
 
 interface ScheduleViewProps {
@@ -235,6 +235,38 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
     }
   }
 
+  const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
+  const [sessionLesson, setSessionLesson] = useState<Lesson | null>(null);
+  const [sessionTopic, setSessionTopic] = useState('');
+  const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
+
+  function openSessionDialog(lesson: Lesson) {
+    setSessionLesson(lesson);
+    setSessionTopic('');
+    setSessionDate(new Date().toISOString().split('T')[0]);
+    setSessionDialogOpen(true);
+  }
+
+  async function handleSessionSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!sessionLesson) return;
+    setFormLoading(true);
+    try {
+      await createClassSession({
+        lessonId: sessionLesson.id,
+        sessionDate,
+        topic: sessionTopic
+      }, session.token);
+      setFormSuccess(`Rozpoczęto lekcję: ${sessionTopic}`);
+      await onRefreshBootstrap(true);
+      setSessionDialogOpen(false);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Nie udało się rozpocząć lekcji');
+    } finally {
+      setFormLoading(false);
+    }
+  }
+
   return (
     <Stack spacing={3} sx={{ maxWidth: '100%', overflow: 'hidden' }}>
       <Box>
@@ -442,6 +474,17 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
                     <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                       {teacherNameById.get(entry.teacherId) ?? ''}
                     </Typography>
+                    {canManageLessons && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        fullWidth
+                        sx={{ mt: 1, py: 0.5, fontSize: '0.7rem' }}
+                        onClick={() => openSessionDialog(entry)}
+                      >
+                        Rozpocznij
+                      </Button>
+                    )}
                   </Box>
                 ))
               )}
@@ -449,6 +492,42 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
           </Paper>
         ))}
       </Box>
+
+      <Dialog open={sessionDialogOpen} onClose={() => setSessionDialogOpen(false)} maxWidth="xs" fullWidth>
+        <form onSubmit={(e) => { void handleSessionSubmit(e); }}>
+          <DialogTitle>Rozpocznij lekcję</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <Typography variant="body2">
+                Rozpoczynasz sesję dla: <strong>{sessionLesson ? subjectById.get(sessionLesson.subjectId)?.name : ''}</strong>
+              </Typography>
+              <TextField
+                label="Data"
+                type="date"
+                value={sessionDate}
+                onChange={(e) => setSessionDate(e.target.value)}
+                fullWidth
+                required
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Temat lekcji"
+                value={sessionTopic}
+                onChange={(e) => setSessionTopic(e.target.value)}
+                fullWidth
+                required
+                autoFocus
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSessionDialogOpen(false)}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={formLoading}>
+              {formLoading ? 'Uruchamianie...' : 'Rozpocznij'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Stack>
   );
 }

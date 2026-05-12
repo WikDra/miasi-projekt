@@ -75,7 +75,7 @@ export interface Lesson {
 
 export interface ClassSession {
   id: string;
-  scheduleId: string;
+  lessonId: string;
   sessionDate: string;
   topic: string;
   status: string;
@@ -309,4 +309,10 @@ export interface Session {
   fullName: string;
   email: string;
   roles: string[];
+}
+
+export interface CreateSessionRequest {
+  lessonId: string;
+  sessionDate: string;
+  topic: string;
 }
