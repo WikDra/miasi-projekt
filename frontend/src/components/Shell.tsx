@@ -110,7 +110,7 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
   );
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', overflowX: 'hidden' }}>
       <AppBar
         position="fixed"
         color="transparent"
@@ -173,6 +173,8 @@ export function Shell({ session, activeSection, onNavigate, onLogout, children }
           flex: 1,
           p: { xs: 2, md: 4 },
           mt: 10,
+          minWidth: 0,
+          overflowX: 'hidden',
           width: { md: `calc(100% - ${drawerWidth}px)` },
         }}
       >

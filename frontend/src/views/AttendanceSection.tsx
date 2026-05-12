@@ -1,8 +1,8 @@
 import {
-  Alert, Box, Button, Chip, Grid, MenuItem, Paper, Stack, TextField, Typography,
+  Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, Paper, Stack, TextField, Typography,
 } from '@mui/material';
 import { useMemo, useState, type FormEvent } from 'react';
-import { createAttendance } from '../api';
+import { createAttendance, excuseAttendance } from '../api';
 import { EntityTable } from '../components/EntityTable';
 import type { BootstrapResponse, Session } from '../types';
 
@@ -47,6 +47,9 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
   const [studentId, setStudentId] = useState(bootstrap.students[0]?.id ?? '');
   const [status, setStatus] = useState('PRESENT');
   const [excuseComment, setExcuseComment] = useState('');
+  const [excuseDialogOpen, setExcuseDialogOpen] = useState(false);
+  const [excusingAttendanceId, setExcusingAttendanceId] = useState<string | null>(null);
+  const [excuseDialogText, setExcuseDialogText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -66,6 +69,57 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
     } finally {
       setLoading(false);
     }
+  }
+
+  function openExcuseDialog(attendanceId: string) {
+    setExcusingAttendanceId(attendanceId);
+    setExcuseDialogText('');
+    setError(null);
+    setSuccess(null);
+    setExcuseDialogOpen(true);
+  }
+
+  async function handleExcuseSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!excusingAttendanceId) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await excuseAttendance(excusingAttendanceId, { excuseComment: excuseDialogText }, session.token);
+      const refreshed = await onRefreshBootstrap(true);
+      if (refreshed) {
+        setSuccess('Usprawiedliwiono nieobecność.');
+        setExcuseDialogOpen(false);
+        setExcusingAttendanceId(null);
+      }
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Nie udało się usprawiedliwić nieobecności');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function canExcuse(row: (typeof bootstrap.attendance)[number]) {
+    if (row.status === 'EXCUSED') {
+      return false;
+    }
+    if (session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(role))) {
+      return true;
+    }
+    if (session.roles.includes('STUDENT')) {
+      const profile = bootstrap.students.find((student) => student.userId === session.userId);
+      return profile?.id === row.studentId;
+    }
+    if (session.roles.includes('PARENT')) {
+      const childProfile = bootstrap.students.find((student) =>
+        bootstrap.parents.some((parent) => parent.userId === session.userId && parent.id === student.parentId));
+      return childProfile?.id === row.studentId;
+    }
+    return false;
   }
 
   return (
@@ -131,10 +185,45 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
                   color={statusColors[row.status] ?? 'default'} size="small" />,
               },
               { key: 'excuseComment', label: 'Uwaga', render: (row) => row.excuseComment ?? '—' },
+                {
+                  key: 'actions',
+                  label: 'Akcje',
+                  render: (row) => canExcuse(row) ? (
+                    <Button size="small" variant="outlined" onClick={() => openExcuseDialog(row.id)}>
+                      Usprawiedliw
+                    </Button>
+                  ) : '—',
+                },
             ]}
           />
         </Grid>
       </Grid>
+
+      <Dialog open={excuseDialogOpen} onClose={() => setExcuseDialogOpen(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={(event) => { void handleExcuseSubmit(event); }}>
+          <DialogTitle>Usprawiedliw nieobecność</DialogTitle>
+          <DialogContent>
+            {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                label="Komentarz"
+                value={excuseDialogText}
+                onChange={(event) => setExcuseDialogText(event.target.value)}
+                multiline
+                minRows={3}
+                required
+                fullWidth
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setExcuseDialogOpen(false)}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading ? 'Zapisywanie...' : 'Usprawiedliw'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Stack>
   );
 }

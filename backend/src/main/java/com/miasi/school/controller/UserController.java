@@ -38,4 +38,13 @@ public class UserController {
     ) {
         return ResponseEntity.ok(demoDataStore.updateUser(id, request, authorization));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        demoDataStore.deleteUser(id, authorization);
+        return ResponseEntity.noContent().build();
+    }
 }

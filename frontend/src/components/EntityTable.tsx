@@ -36,11 +36,13 @@ export function EntityTable<T extends { id?: string }>({
     <Paper
       sx={{
         overflow: 'hidden',
+        width: '100%',
+        minWidth: 0,
         border: '1px solid rgba(17, 100, 102, 0.12)',
       }}
     >
-      <TableContainer>
-        <Table>
+      <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 0 }}>
           <TableHead>
             <TableRow>
               <TableCell colSpan={columns.length} sx={{ borderBottom: 'none', pb: 0 }}>

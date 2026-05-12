@@ -68,9 +68,16 @@ export function MessagesSection({ bootstrap, session, onRefreshBootstrap }: Mess
     <Stack spacing={3}>
       <Box><Typography variant="h3">Wiadomości i powiadomienia</Typography></Box>
 
-      <Grid container spacing={2.5}>
-        <Grid item xs={12} lg={5}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 420px) minmax(0, 1fr)' },
+          gap: 2.5,
+        }}
+      >
+        <Box sx={{ minWidth: 0 }}>
           <Paper elevation={0} sx={{
+            width: '100%',
             p: 3, border: '1px solid rgba(17,100,102,0.12)',
             background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,242,0.86))',
           }}>
@@ -92,9 +99,9 @@ export function MessagesSection({ bootstrap, session, onRefreshBootstrap }: Mess
               </Button>
             </Stack>
           </Paper>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} lg={7}>
+        <Box sx={{ minWidth: 0 }}>
           <Stack spacing={2.5}>
             <EntityTable
               title="Wiadomości"
@@ -141,8 +148,8 @@ export function MessagesSection({ bootstrap, session, onRefreshBootstrap }: Mess
               ]}
             />
           </Stack>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       <Dialog open={!!selectedMessage} onClose={() => setSelectedMessage(null)} maxWidth="sm" fullWidth>
         {selectedMessage && (

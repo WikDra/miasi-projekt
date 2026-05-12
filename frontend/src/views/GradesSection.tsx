@@ -2,6 +2,10 @@ import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   MenuItem,
   Paper,
@@ -10,7 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { createGrade } from '../api';
+import { createGrade, deleteGrade, updateGrade } from '../api';
 import { EntityTable } from '../components/EntityTable';
 import type { BootstrapResponse, Session } from '../types';
 
@@ -57,28 +61,32 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
   const canManageGrades = session.roles.some((role) => ['TEACHER', 'ADMIN', 'DIRECTOR'].includes(role));
 
   const visibleGrades = useMemo(() => {
-    if (session.roles.some((r) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(r))) {
+    if (session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(role))) {
       return bootstrap.grades;
     }
     if (session.roles.includes('STUDENT')) {
-      const profile = bootstrap.students.find((s) => s.userId === session.userId);
-      return profile ? bootstrap.grades.filter((g) => g.studentId === profile.id) : [];
+      const profile = bootstrap.students.find((student) => student.userId === session.userId);
+      return profile ? bootstrap.grades.filter((grade) => grade.studentId === profile.id) : [];
     }
     if (session.roles.includes('PARENT')) {
-      const childProfile = bootstrap.students.find((s) =>
-        bootstrap.parents.some((p) => p.userId === session.userId && p.id === s.parentId));
-      return childProfile ? bootstrap.grades.filter((g) => g.studentId === childProfile.id) : [];
+      const childProfile = bootstrap.students.find((student) =>
+        bootstrap.parents.some((parent) => parent.userId === session.userId && parent.id === student.parentId));
+      return childProfile ? bootstrap.grades.filter((grade) => grade.studentId === childProfile.id) : [];
     }
     return [];
   }, [bootstrap, session]);
 
   const [form, setForm] = useState<GradeFormState>(() => getInitialForm(bootstrap, session.userId));
+  const [editForm, setEditForm] = useState<GradeFormState>(() => getInitialForm(bootstrap, session.userId));
+  const [editingGradeId, setEditingGradeId] = useState<string | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     setForm(getInitialForm(bootstrap, session.userId));
+    setEditForm(getInitialForm(bootstrap, session.userId));
   }, [bootstrap, session.userId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -119,6 +127,109 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
       setLoading(false);
     }
   }
+
+  function openEditGrade(grade: (typeof bootstrap.grades)[number]) {
+    setEditingGradeId(grade.id);
+    setEditForm({
+      studentId: grade.studentId,
+      teacherId: grade.teacherId,
+      subjectId: grade.subjectId,
+      decimalValue: grade.decimalValue,
+      weight: grade.weight.toString(),
+      type: grade.type,
+      comment: grade.comment,
+    });
+    setError(null);
+    setSuccess(null);
+    setShowEditDialog(true);
+  }
+
+  async function handleEditSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingGradeId) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await updateGrade(editingGradeId, {
+        studentId: editForm.studentId,
+        teacherId: editForm.teacherId,
+        subjectId: editForm.subjectId,
+        decimalValue: Number(editForm.decimalValue),
+        weight: Number(editForm.weight),
+        type: editForm.type,
+        comment: editForm.comment,
+      }, session.token);
+      await onRefreshBootstrap(true);
+      setSuccess('Zaktualizowano ocenę.');
+      setShowEditDialog(false);
+      setEditingGradeId(null);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Nie udało się zaktualizować oceny');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDeleteGrade(gradeId: string) {
+    if (!window.confirm('Usunąć tę ocenę?')) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await deleteGrade(gradeId, session.token);
+      await onRefreshBootstrap(true);
+      setSuccess('Usunięto ocenę.');
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Nie udało się usunąć oceny');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const gradeColumns = [
+    { key: 'decimalValue', label: 'Ocena' },
+    { key: 'weight', label: 'Waga', align: 'center' as const },
+    { key: 'type', label: 'Typ' },
+    {
+      key: 'studentId',
+      label: 'Uczeń',
+      render: (row: (typeof bootstrap.grades)[number]) => {
+        const student = studentById.get(row.studentId);
+        const studentUser = student ? userById.get(student.userId) : undefined;
+        return studentUser ? `${studentUser.firstName} ${studentUser.lastName}` : row.studentId;
+      },
+    },
+    {
+      key: 'subjectId',
+      label: 'Przedmiot',
+      render: (row: (typeof bootstrap.grades)[number]) => subjectById.get(row.subjectId)?.name ?? row.subjectId,
+    },
+    { key: 'issuedAt', label: 'Data', render: (row: (typeof bootstrap.grades)[number]) => formatDateLabel(row.issuedAt) },
+    { key: 'comment', label: 'Komentarz' },
+    ...(canManageGrades ? [{
+      key: 'actions',
+      label: 'Akcje',
+      render: (row: (typeof bootstrap.grades)[number]) => (
+        <Stack direction="row" spacing={1}>
+          <Button size="small" variant="outlined" onClick={() => openEditGrade(row)}>
+            Edytuj
+          </Button>
+          <Button size="small" color="error" variant="outlined" onClick={() => { void handleDeleteGrade(row.id); }}>
+            Usuń
+          </Button>
+        </Stack>
+      ),
+    }] : []),
+  ];
 
   return (
     <Stack spacing={3}>
@@ -231,9 +342,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   fullWidth
                 >
                   {gradeTypes.map((gradeType) => (
-                    <MenuItem key={gradeType} value={gradeType}>
-                      {gradeType}
-                    </MenuItem>
+                    <MenuItem key={gradeType} value={gradeType}>{gradeType}</MenuItem>
                   ))}
                 </TextField>
 
@@ -259,31 +368,123 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
             <EntityTable
               title="Lista ocen"
               rows={visibleGrades}
-              columns={[
-                { key: 'decimalValue', label: 'Ocena' },
-                { key: 'weight', label: 'Waga', align: 'center' },
-                { key: 'type', label: 'Typ' },
-                {
-                  key: 'studentId',
-                  label: 'Uczeń',
-                  render: (row) => {
-                    const student = studentById.get(row.studentId);
-                    const studentUser = student ? userById.get(student.userId) : undefined;
-                    return studentUser ? `${studentUser.firstName} ${studentUser.lastName}` : row.studentId;
-                  },
-                },
-                {
-                  key: 'subjectId',
-                  label: 'Przedmiot',
-                  render: (row) => subjectById.get(row.subjectId)?.name ?? row.subjectId,
-                },
-                { key: 'issuedAt', label: 'Data', render: (row) => formatDateLabel(row.issuedAt) },
-                { key: 'comment', label: 'Komentarz' },
-              ]}
+              columns={gradeColumns}
             />
           </Stack>
         </Grid>
       </Grid>
+
+      <Dialog open={showEditDialog} onClose={() => setShowEditDialog(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={(event) => { void handleEditSubmit(event); }}>
+          <DialogTitle>Edytuj ocenę</DialogTitle>
+          <DialogContent>
+            {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                select
+                label="Uczeń"
+                value={editForm.studentId}
+                onChange={(event) => setEditForm((current) => ({ ...current, studentId: event.target.value }))}
+                required
+                fullWidth
+              >
+                {bootstrap.students.map((student) => {
+                  const user = userById.get(student.userId);
+                  return (
+                    <MenuItem key={student.id} value={student.id}>
+                      {user ? `${user.firstName} ${user.lastName}` : student.studentNumber} ({student.studentNumber})
+                    </MenuItem>
+                  );
+                })}
+              </TextField>
+
+              <TextField
+                select
+                label="Nauczyciel"
+                value={editForm.teacherId}
+                onChange={(event) => setEditForm((current) => ({ ...current, teacherId: event.target.value }))}
+                required
+                fullWidth
+              >
+                {bootstrap.teachers.map((teacher) => {
+                  const user = userById.get(teacher.userId);
+                  return (
+                    <MenuItem key={teacher.id} value={teacher.id}>
+                      {user ? `${user.firstName} ${user.lastName}` : teacher.employeeNumber} - {teacher.specialization}
+                    </MenuItem>
+                  );
+                })}
+              </TextField>
+
+              <TextField
+                select
+                label="Przedmiot"
+                value={editForm.subjectId}
+                onChange={(event) => setEditForm((current) => ({ ...current, subjectId: event.target.value }))}
+                required
+                fullWidth
+              >
+                {bootstrap.subjects.map((subject) => (
+                  <MenuItem key={subject.id} value={subject.id}>{subject.name}</MenuItem>
+                ))}
+              </TextField>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Ocena"
+                    type="number"
+                    inputProps={{ step: 0.5, min: 1, max: 6 }}
+                    value={editForm.decimalValue}
+                    onChange={(event) => setEditForm((current) => ({ ...current, decimalValue: event.target.value }))}
+                    required
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Waga"
+                    type="number"
+                    inputProps={{ min: 1, max: 10 }}
+                    value={editForm.weight}
+                    onChange={(event) => setEditForm((current) => ({ ...current, weight: event.target.value }))}
+                    required
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
+
+              <TextField
+                select
+                label="Typ oceny"
+                value={editForm.type}
+                onChange={(event) => setEditForm((current) => ({ ...current, type: event.target.value }))}
+                required
+                fullWidth
+              >
+                {gradeTypes.map((gradeType) => (
+                  <MenuItem key={gradeType} value={gradeType}>{gradeType}</MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                label="Komentarz"
+                value={editForm.comment}
+                onChange={(event) => setEditForm((current) => ({ ...current, comment: event.target.value }))}
+                multiline
+                minRows={3}
+                fullWidth
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowEditDialog(false)}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading ? 'Zapisywanie...' : 'Zapisz zmiany'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Stack>
   );
 }

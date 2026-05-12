@@ -205,6 +205,20 @@ public class DemoDataStore {
         return updated;
     }
 
+    public synchronized void deleteUser(UUID userId, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "ADMIN");
+
+        SchoolDomain.User existing = users.get(userId);
+        if (existing == null) {
+            throw new NoSuchElementException("Nie znaleziono użytkownika");
+        }
+
+        deleteUserDependencies(existing);
+        users.remove(userId);
+        persistState();
+    }
+
     // ── Students CRUD ──
 
     public synchronized SchoolDomain.StudentProfile createStudent(CreateStudentRequest request, String authorizationHeader) {
@@ -227,6 +241,34 @@ public class DemoDataStore {
         return student;
     }
 
+    public synchronized SchoolDomain.StudentProfile updateStudent(UUID studentId, UpdateStudentRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "SECRETARY", "ADMIN");
+
+        SchoolDomain.StudentProfile existing = requireStudent(studentId);
+        requireUser(request.userId());
+        requireClass(request.classId());
+        if (request.parentId() != null) {
+            requireUser(request.parentId());
+        }
+
+        SchoolDomain.StudentProfile updated = new SchoolDomain.StudentProfile(
+                existing.id(), request.userId(), request.parentId(), request.classId(), request.studentNumber().trim()
+        );
+        students.put(updated.id(), updated);
+        persistState();
+        return updated;
+    }
+
+    public synchronized void deleteStudent(UUID studentId, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "SECRETARY", "ADMIN");
+
+        SchoolDomain.StudentProfile existing = requireStudent(studentId);
+        deleteStudentInternal(existing.id());
+        persistState();
+    }
+
     // ── Classes CRUD ──
 
     public synchronized SchoolDomain.SchoolClass createClass(CreateClassRequest request, String authorizationHeader) {
@@ -240,6 +282,173 @@ public class DemoDataStore {
         classes.put(schoolClass.id(), schoolClass);
         persistState();
         return schoolClass;
+    }
+
+    public synchronized SchoolDomain.SchoolClass updateClass(UUID classId, UpdateClassRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "SECRETARY", "ADMIN");
+
+        SchoolDomain.SchoolClass existing = requireClass(classId);
+        requireTeacher(request.teacherId());
+
+        SchoolDomain.SchoolClass updated = new SchoolDomain.SchoolClass(
+                existing.id(), request.teacherId(), request.name().trim(), request.schoolYear().trim()
+        );
+        classes.put(updated.id(), updated);
+        persistState();
+        return updated;
+    }
+
+    public synchronized void deleteClass(UUID classId, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "SECRETARY", "ADMIN");
+
+        requireClass(classId);
+        deleteClassInternal(classId);
+        persistState();
+    }
+
+    // ── Subjects CRUD ──
+
+    public synchronized SchoolDomain.Subject createSubject(CreateSubjectRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "ADMIN", "DIRECTOR", "SECRETARY");
+
+        boolean subjectExists = subjects.values().stream()
+                .anyMatch(subject -> subject.name().equalsIgnoreCase(request.name().trim()));
+        if (subjectExists) {
+            throw new IllegalArgumentException("Przedmiot o takiej nazwie już istnieje");
+        }
+
+        SchoolDomain.Subject subject = new SchoolDomain.Subject(
+                UUID.randomUUID(), request.name().trim(), request.description().trim()
+        );
+        subjects.put(subject.id(), subject);
+        persistState();
+        return subject;
+    }
+
+    public synchronized SchoolDomain.Subject updateSubject(UUID subjectId, UpdateSubjectRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "ADMIN", "DIRECTOR", "SECRETARY");
+
+        SchoolDomain.Subject existing = requireSubject(subjectId);
+        SchoolDomain.Subject updated = new SchoolDomain.Subject(
+                existing.id(), request.name().trim(), request.description().trim()
+        );
+        subjects.put(updated.id(), updated);
+        persistState();
+        return updated;
+    }
+
+    public synchronized void deleteSubject(UUID subjectId, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireRole(actor, "ADMIN", "DIRECTOR", "SECRETARY");
+
+        requireSubject(subjectId);
+
+        List<UUID> lessonIds = lessons.values().stream()
+                .filter(lesson -> lesson.subjectId().equals(subjectId))
+                .map(SchoolDomain.Lesson::id)
+                .toList();
+        for (UUID lessonId : lessonIds) {
+            deleteLessonInternal(lessonId);
+        }
+
+        grades.entrySet().removeIf(entry -> entry.getValue().subjectId().equals(subjectId));
+        subjects.remove(subjectId);
+        persistState();
+    }
+
+    // ── Lessons CRUD ──
+
+    public synchronized SchoolDomain.Lesson createLesson(CreateLessonRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireLessonManager(actor, request.teacherId());
+
+        requireClass(request.classId());
+        requireTeacher(request.teacherId());
+        requireSubject(request.subjectId());
+
+        SchoolDomain.Lesson lesson = new SchoolDomain.Lesson(
+                UUID.randomUUID(), request.classId(), request.teacherId(), request.subjectId(),
+                request.dayOfWeek(), request.startTime(), request.endTime(), request.roomNumber().trim()
+        );
+        lessons.put(lesson.id(), lesson);
+        persistState();
+        return lesson;
+    }
+
+    public synchronized SchoolDomain.Lesson updateLesson(UUID lessonId, UpdateLessonRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        requireLessonManager(actor, request.teacherId());
+
+        requireClass(request.classId());
+        requireTeacher(request.teacherId());
+        requireSubject(request.subjectId());
+
+        SchoolDomain.Lesson existing = requireLesson(lessonId);
+        SchoolDomain.Lesson updated = new SchoolDomain.Lesson(
+                existing.id(), request.classId(), request.teacherId(), request.subjectId(),
+                request.dayOfWeek(), request.startTime(), request.endTime(), request.roomNumber().trim()
+        );
+        lessons.put(updated.id(), updated);
+        persistState();
+        return updated;
+    }
+
+    public synchronized void deleteLesson(UUID lessonId, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        SchoolDomain.Lesson lesson = requireLesson(lessonId);
+        requireLessonManager(actor, lesson.teacherId());
+
+        deleteLessonInternal(lessonId);
+        persistState();
+    }
+
+    // ── Grades maintenance ──
+
+    public synchronized SchoolDomain.GradeRecord updateGrade(UUID gradeId, UpdateGradeRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        SchoolDomain.GradeRecord existing = requireGrade(gradeId);
+        requireGraderTeacher(actor, request.teacherId());
+        requireStudent(request.studentId());
+        requireTeacher(request.teacherId());
+        requireSubject(request.subjectId());
+
+        SchoolDomain.GradeRecord updated = new SchoolDomain.GradeRecord(
+                existing.id(), request.studentId(), request.teacherId(), request.subjectId(),
+                request.decimalValue(), request.weight(), request.type().trim().toUpperCase(),
+                request.comment() == null ? "" : request.comment().trim(),
+                existing.issuedAt(), existing.category()
+        );
+        grades.put(updated.id(), updated);
+        persistState();
+        return updated;
+    }
+
+    public synchronized void deleteGrade(UUID gradeId, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        SchoolDomain.GradeRecord existing = requireGrade(gradeId);
+        requireGraderTeacher(actor, existing.teacherId());
+        grades.remove(gradeId);
+        persistState();
+    }
+
+    // ── Attendance maintenance ──
+
+    public synchronized SchoolDomain.AttendanceRecord excuseAttendance(UUID attendanceId, ExcuseAttendanceRequest request, String authorizationHeader) {
+        SchoolDomain.User actor = requireAuthorizedUser(authorizationHeader);
+        SchoolDomain.AttendanceRecord existing = requireAttendance(attendanceId);
+        requireAttendanceExcusePermission(actor, existing);
+
+        SchoolDomain.AttendanceRecord updated = new SchoolDomain.AttendanceRecord(
+                existing.id(), existing.sessionId(), existing.studentId(), SchoolDomain.AttendanceStatus.EXCUSED,
+                request.excuseComment().trim()
+        );
+        attendance.put(updated.id(), updated);
+        persistState();
+        return updated;
     }
 
     // ── Reports ──
@@ -349,6 +558,14 @@ public class DemoDataStore {
         return student;
     }
 
+    private SchoolDomain.User requireUser(UUID userId) {
+        SchoolDomain.User user = users.get(userId);
+        if (user == null) {
+            throw new NoSuchElementException("Nie znaleziono użytkownika");
+        }
+        return user;
+    }
+
     private SchoolDomain.TeacherProfile requireTeacher(UUID teacherId) {
         SchoolDomain.TeacherProfile teacher = teachers.get(teacherId);
         if (teacher == null) {
@@ -363,6 +580,210 @@ public class DemoDataStore {
             throw new NoSuchElementException("Nie znaleziono przedmiotu");
         }
         return subject;
+    }
+
+    private SchoolDomain.Lesson requireLesson(UUID lessonId) {
+        SchoolDomain.Lesson lesson = lessons.get(lessonId);
+        if (lesson == null) {
+            throw new NoSuchElementException("Nie znaleziono lekcji");
+        }
+        return lesson;
+    }
+
+    private SchoolDomain.GradeRecord requireGrade(UUID gradeId) {
+        SchoolDomain.GradeRecord grade = grades.get(gradeId);
+        if (grade == null) {
+            throw new NoSuchElementException("Nie znaleziono oceny");
+        }
+        return grade;
+    }
+
+    private SchoolDomain.AttendanceRecord requireAttendance(UUID attendanceId) {
+        SchoolDomain.AttendanceRecord record = attendance.get(attendanceId);
+        if (record == null) {
+            throw new NoSuchElementException("Nie znaleziono wpisu frekwencji");
+        }
+        return record;
+    }
+
+    private SchoolDomain.SchoolClass requireClass(UUID classId) {
+        SchoolDomain.SchoolClass schoolClass = classes.get(classId);
+        if (schoolClass == null) {
+            throw new NoSuchElementException("Nie znaleziono klasy");
+        }
+        return schoolClass;
+    }
+
+    private SchoolDomain.TeacherProfile findTeacherProfile(UUID userId) {
+        return teachers.values().stream()
+                .filter(teacher -> teacher.userId().equals(userId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private SchoolDomain.StudentProfile findStudentProfileByUser(UUID userId) {
+        return students.values().stream()
+                .filter(student -> student.userId().equals(userId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private SchoolDomain.ParentProfile findParentProfileByUser(UUID userId) {
+        return parents.values().stream()
+                .filter(parent -> parent.userId().equals(userId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private SchoolDomain.SecretaryProfile findSecretaryProfileByUser(UUID userId) {
+        return secretaries.values().stream()
+                .filter(secretary -> secretary.userId().equals(userId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private SchoolDomain.PrincipalProfile findPrincipalProfileByUser(UUID userId) {
+        return principals.values().stream()
+                .filter(principal -> principal.userId().equals(userId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void deleteUserDependencies(SchoolDomain.User user) {
+        SchoolDomain.StudentProfile studentProfile = findStudentProfileByUser(user.id());
+        if (studentProfile != null) {
+            deleteStudentInternal(studentProfile.id());
+        }
+
+        SchoolDomain.ParentProfile parentProfile = findParentProfileByUser(user.id());
+        if (parentProfile != null) {
+            boolean hasChildren = students.values().stream().anyMatch(student -> parentProfile.id().equals(student.parentId()));
+            if (hasChildren) {
+                throw new IllegalArgumentException("Nie można usunąć rodzica przypisanego do uczniów");
+            }
+            parents.remove(parentProfile.id());
+        }
+
+        SchoolDomain.SecretaryProfile secretaryProfile = findSecretaryProfileByUser(user.id());
+        if (secretaryProfile != null) {
+            secretaries.remove(secretaryProfile.id());
+        }
+
+        SchoolDomain.PrincipalProfile principalProfile = findPrincipalProfileByUser(user.id());
+        if (principalProfile != null) {
+            principals.remove(principalProfile.id());
+        }
+
+        SchoolDomain.TeacherProfile teacherProfile = findTeacherProfile(user.id());
+        if (teacherProfile != null) {
+            List<UUID> classIds = classes.values().stream()
+                    .filter(schoolClass -> teacherProfile.id().equals(schoolClass.teacherId()))
+                    .map(SchoolDomain.SchoolClass::id)
+                    .toList();
+            for (UUID classId : classIds) {
+                deleteClassInternal(classId);
+            }
+
+            List<UUID> lessonIds = lessons.values().stream()
+                    .filter(lesson -> teacherProfile.id().equals(lesson.teacherId()))
+                    .map(SchoolDomain.Lesson::id)
+                    .toList();
+            for (UUID lessonId : lessonIds) {
+                deleteLessonInternal(lessonId);
+            }
+
+            teachers.remove(teacherProfile.id());
+        }
+    }
+
+    private void deleteStudentInternal(UUID studentId) {
+        grades.entrySet().removeIf(entry -> entry.getValue().studentId().equals(studentId));
+        attendance.entrySet().removeIf(entry -> entry.getValue().studentId().equals(studentId));
+        students.remove(studentId);
+    }
+
+    private void deleteClassInternal(UUID classId) {
+        List<UUID> lessonIds = lessons.values().stream()
+                .filter(lesson -> lesson.classId().equals(classId))
+                .map(SchoolDomain.Lesson::id)
+                .toList();
+        for (UUID lessonId : lessonIds) {
+            deleteLessonInternal(lessonId);
+        }
+
+        List<UUID> studentIds = students.values().stream()
+                .filter(student -> student.classId().equals(classId))
+                .map(SchoolDomain.StudentProfile::id)
+                .toList();
+        for (UUID studentId : studentIds) {
+            deleteStudentInternal(studentId);
+        }
+
+        classes.remove(classId);
+    }
+
+    private void requireLessonManager(SchoolDomain.User actor, UUID requestedTeacherId) {
+        if (actor.roles().contains("ADMIN") || actor.roles().contains("DIRECTOR") || actor.roles().contains("SECRETARY")) {
+            return;
+        }
+
+        if (!actor.roles().contains("TEACHER")) {
+            throw new AuthorizationFailedException("Tylko nauczyciel lub administracja może zarządzać planem lekcji");
+        }
+
+        SchoolDomain.TeacherProfile actorTeacher = findTeacherProfile(actor.id());
+        if (actorTeacher == null) {
+            throw new AuthorizationFailedException("Zalogowany nauczyciel nie ma przypisanego profilu");
+        }
+
+        if (!actorTeacher.id().equals(requestedTeacherId)) {
+            throw new AuthorizationFailedException("Nauczyciel może zarządzać tylko własnym planem lekcji");
+        }
+    }
+
+    private void requireAttendanceExcusePermission(SchoolDomain.User actor, SchoolDomain.AttendanceRecord record) {
+        if (actor.roles().contains("ADMIN") || actor.roles().contains("DIRECTOR") || actor.roles().contains("SECRETARY")) {
+            return;
+        }
+
+        if (actor.roles().contains("TEACHER")) {
+            SchoolDomain.ClassSession session = classSessions.get(record.sessionId());
+            SchoolDomain.Lesson lesson = session != null ? lessons.get(session.lessonId()) : null;
+            SchoolDomain.TeacherProfile actorTeacher = findTeacherProfile(actor.id());
+            if (lesson != null && actorTeacher != null && lesson.teacherId().equals(actorTeacher.id())) {
+                return;
+            }
+        }
+
+        if (actor.roles().contains("STUDENT")) {
+            SchoolDomain.StudentProfile student = students.get(record.studentId());
+            if (student != null && student.userId().equals(actor.id())) {
+                return;
+            }
+        }
+
+        if (actor.roles().contains("PARENT")) {
+            SchoolDomain.StudentProfile student = students.get(record.studentId());
+            if (student != null && student.parentId().equals(actor.id())) {
+                return;
+            }
+        }
+
+        throw new AuthorizationFailedException("Brak uprawnień do usprawiedliwienia tej nieobecności");
+    }
+
+    private void deleteLessonInternal(UUID lessonId) {
+        lessons.remove(lessonId);
+
+        List<UUID> sessionIds = classSessions.values().stream()
+                .filter(session -> lessonId.equals(session.lessonId()))
+                .map(SchoolDomain.ClassSession::id)
+                .toList();
+
+        for (UUID sessionId : sessionIds) {
+            classSessions.remove(sessionId);
+            attendance.entrySet().removeIf(entry -> entry.getValue().sessionId().equals(sessionId));
+        }
     }
 
     private SchoolDomain.User requireAuthorizedUser(String authorizationHeader) {

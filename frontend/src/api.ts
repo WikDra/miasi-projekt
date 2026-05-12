@@ -6,6 +6,8 @@ import type {
   CreateClassRequest,
   CreateGradeRequest,
   CreateMessageRequest,
+  CreateLessonRequest,
+  CreateSubjectRequest,
   CreateStudentRequest,
   CreateUserRequest,
   GradeReportEntry,
@@ -14,8 +16,16 @@ import type {
   LoginResponse,
   Message,
   Notification,
+  ExcuseAttendanceRequest,
   SchoolClass,
+  Subject,
+  Lesson,
   StudentProfile,
+  UpdateClassRequest,
+  UpdateGradeRequest,
+  UpdateLessonRequest,
+  UpdateStudentRequest,
+  UpdateSubjectRequest,
   UpdateUserRequest,
   User,
 } from './types';
@@ -36,6 +46,13 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
       // fall through to the raw response body
     }
     throw new Error(errorMessage || `Request failed with status ${response.status}`);
+  }
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  const contentLength = response.headers.get('content-length');
+  if (contentLength === '0') {
+    return undefined as T;
   }
   return response.json() as Promise<T>;
 }
@@ -67,9 +84,32 @@ export async function createGrade(request: CreateGradeRequest, token: string): P
   });
 }
 
+export async function updateGrade(id: string, request: UpdateGradeRequest, token: string): Promise<GradeRecord> {
+  return requestJson<GradeRecord>(`/api/grades/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function deleteGrade(id: string, token: string): Promise<void> {
+  await requestJson<void>(`/api/grades/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
 export async function createAttendance(request: CreateAttendanceRequest, token: string): Promise<AttendanceRecord> {
   return requestJson<AttendanceRecord>('/api/attendance', {
     method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function excuseAttendance(id: string, request: ExcuseAttendanceRequest, token: string): Promise<AttendanceRecord> {
+  return requestJson<AttendanceRecord>(`/api/attendance/${id}/excuse`, {
+    method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(request),
   });
@@ -106,6 +146,13 @@ export async function updateUser(id: string, request: UpdateUserRequest, token: 
   });
 }
 
+export async function deleteUser(id: string, token: string): Promise<void> {
+  await requestJson<void>(`/api/users/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
 export async function createStudent(request: CreateStudentRequest, token: string): Promise<StudentProfile> {
   return requestJson<StudentProfile>('/api/students', {
     method: 'POST',
@@ -114,11 +161,87 @@ export async function createStudent(request: CreateStudentRequest, token: string
   });
 }
 
+export async function updateStudent(id: string, request: UpdateStudentRequest, token: string): Promise<StudentProfile> {
+  return requestJson<StudentProfile>(`/api/students/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function deleteStudent(id: string, token: string): Promise<void> {
+  await requestJson<void>(`/api/students/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
 export async function createClassEntity(request: CreateClassRequest, token: string): Promise<SchoolClass> {
   return requestJson<SchoolClass>('/api/classes', {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(request),
+  });
+}
+
+export async function updateClassEntity(id: string, request: UpdateClassRequest, token: string): Promise<SchoolClass> {
+  return requestJson<SchoolClass>(`/api/classes/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function deleteClassEntity(id: string, token: string): Promise<void> {
+  await requestJson<void>(`/api/classes/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
+export async function createSubject(request: CreateSubjectRequest, token: string): Promise<Subject> {
+  return requestJson<Subject>('/api/subjects', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function updateSubject(id: string, request: UpdateSubjectRequest, token: string): Promise<Subject> {
+  return requestJson<Subject>(`/api/subjects/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function deleteSubject(id: string, token: string): Promise<void> {
+  await requestJson<void>(`/api/subjects/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
+export async function createLesson(request: CreateLessonRequest, token: string): Promise<Lesson> {
+  return requestJson<Lesson>('/api/lessons', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function updateLesson(id: string, request: UpdateLessonRequest, token: string): Promise<Lesson> {
+  return requestJson<Lesson>(`/api/lessons/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(request),
+  });
+}
+
+export async function deleteLesson(id: string, token: string): Promise<void> {
+  await requestJson<void>(`/api/lessons/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
   });
 }
 

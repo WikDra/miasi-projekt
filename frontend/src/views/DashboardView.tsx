@@ -14,7 +14,7 @@ import { ScheduleView } from './ScheduleView';
 import { AttendanceSection } from './AttendanceSection';
 import { ReportsView } from './ReportsView';
 import { MessagesSection } from './MessagesSection';
-import { createUser, createStudent, createClassEntity, updateUser } from '../api';
+import { createUser, createStudent, createClassEntity, updateUser, createSubject, updateSubject, deleteSubject, deleteUser, updateClassEntity, deleteClassEntity, updateStudent, deleteStudent } from '../api';
 import { useState, type FormEvent } from 'react';
 
 interface DashboardViewProps {
@@ -47,11 +47,18 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
   const [showAddUser, setShowAddUser] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
+  const [showEditStudent, setShowEditStudent] = useState(false);
   const [showAddClass, setShowAddClass] = useState(false);
+  const [showEditClass, setShowEditClass] = useState(false);
+  const [showAddSubject, setShowAddSubject] = useState(false);
+  const [showEditSubject, setShowEditSubject] = useState(false);
   const [crudError, setCrudError] = useState<string | null>(null);
   const [crudLoading, setCrudLoading] = useState(false);
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
 
   // New user form
   const [nuFirstName, setNuFirstName] = useState('');
@@ -76,6 +83,21 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
   const [ncName, setNcName] = useState('');
   const [ncTeacherId, setNcTeacherId] = useState('');
   const [ncYear, setNcYear] = useState('2025/2026');
+
+  // Edit class form
+  const [ecName, setEcName] = useState('');
+  const [ecTeacherId, setEcTeacherId] = useState('');
+  const [ecYear, setEcYear] = useState('2025/2026');
+
+  // Edit student form
+  const [esUserId, setEsUserId] = useState('');
+  const [esParentId, setEsParentId] = useState('');
+  const [esClassId, setEsClassId] = useState('');
+  const [esNumber, setEsNumber] = useState('');
+
+  // Subject form
+  const [subName, setSubName] = useState('');
+  const [subDescription, setSubDescription] = useState('');
 
   async function handleAddUser(e: FormEvent) {
     e.preventDefault(); setCrudLoading(true); setCrudError(null);
@@ -154,8 +176,182 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
     } finally { setCrudLoading(false); }
   }
 
+  function openEditClass(schoolClass: (typeof bootstrap.classes)[number]) {
+    setCrudError(null);
+    setEditingClassId(schoolClass.id);
+    setEcName(schoolClass.name);
+    setEcTeacherId(schoolClass.teacherId);
+    setEcYear(schoolClass.schoolYear);
+    setShowEditClass(true);
+  }
+
+  function closeEditClass() {
+    setShowEditClass(false);
+    setEditingClassId(null);
+  }
+
+  async function handleEditClass(e: FormEvent) {
+    e.preventDefault();
+    if (!editingClassId) {
+      return;
+    }
+
+    setCrudLoading(true); setCrudError(null);
+    try {
+      await updateClassEntity(editingClassId, { name: ecName, teacherId: ecTeacherId, schoolYear: ecYear }, session.token);
+      await onRefreshBootstrap(true);
+      closeEditClass();
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally { setCrudLoading(false); }
+  }
+
+  async function handleDeleteClass(classId: string) {
+    if (!window.confirm('Usunąć tę klasę?')) {
+      return;
+    }
+
+    setCrudLoading(true);
+    setCrudError(null);
+    try {
+      await deleteClassEntity(classId, session.token);
+      await onRefreshBootstrap(true);
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally {
+      setCrudLoading(false);
+    }
+  }
+
+  function openEditStudent(student: (typeof bootstrap.students)[number]) {
+    setCrudError(null);
+    setEditingStudentId(student.id);
+    setEsUserId(student.userId);
+    setEsParentId(student.parentId ?? '');
+    setEsClassId(student.classId);
+    setEsNumber(student.studentNumber);
+    setShowEditStudent(true);
+  }
+
+  function closeEditStudent() {
+    setShowEditStudent(false);
+    setEditingStudentId(null);
+  }
+
+  async function handleEditStudent(e: FormEvent) {
+    e.preventDefault();
+    if (!editingStudentId) {
+      return;
+    }
+
+    setCrudLoading(true); setCrudError(null);
+    try {
+      await updateStudent(editingStudentId, {
+        userId: esUserId,
+        parentId: esParentId || undefined,
+        classId: esClassId,
+        studentNumber: esNumber,
+      }, session.token);
+      await onRefreshBootstrap(true);
+      closeEditStudent();
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally { setCrudLoading(false); }
+  }
+
+  async function handleDeleteStudent(studentId: string) {
+    if (!window.confirm('Usunąć tego ucznia?')) {
+      return;
+    }
+
+    setCrudLoading(true);
+    setCrudError(null);
+    try {
+      await deleteStudent(studentId, session.token);
+      await onRefreshBootstrap(true);
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally {
+      setCrudLoading(false);
+    }
+  }
+
+  async function handleDeleteUser(userId: string) {
+    if (!window.confirm('Usunąć tego użytkownika?')) {
+      return;
+    }
+
+    setCrudLoading(true);
+    setCrudError(null);
+    try {
+      await deleteUser(userId, session.token);
+      await onRefreshBootstrap(true);
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally {
+      setCrudLoading(false);
+    }
+  }
+
+  function openEditSubject(subject: (typeof bootstrap.subjects)[number]) {
+    setCrudError(null);
+    setEditingSubjectId(subject.id);
+    setSubName(subject.name);
+    setSubDescription(subject.description);
+    setShowEditSubject(true);
+  }
+
+  function resetSubjectForm() {
+    setSubName('');
+    setSubDescription('');
+    setEditingSubjectId(null);
+  }
+
+  async function handleAddSubject(e: FormEvent) {
+    e.preventDefault(); setCrudLoading(true); setCrudError(null);
+    try {
+      await createSubject({ name: subName, description: subDescription }, session.token);
+      await onRefreshBootstrap(true);
+      setShowAddSubject(false);
+      resetSubjectForm();
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally { setCrudLoading(false); }
+  }
+
+  async function handleEditSubject(e: FormEvent) {
+    e.preventDefault();
+    if (!editingSubjectId) {
+      return;
+    }
+
+    setCrudLoading(true); setCrudError(null);
+    try {
+      await updateSubject(editingSubjectId, { name: subName, description: subDescription }, session.token);
+      await onRefreshBootstrap(true);
+      setShowEditSubject(false);
+      resetSubjectForm();
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally { setCrudLoading(false); }
+  }
+
+  async function handleDeleteSubject(subjectId: string) {
+    if (!window.confirm('Usunąć ten przedmiot?')) {
+      return;
+    }
+    setCrudLoading(true); setCrudError(null);
+    try {
+      await deleteSubject(subjectId, session.token);
+      await onRefreshBootstrap(true);
+    } catch (err) {
+      setCrudError(err instanceof Error ? err.message : 'Błąd');
+    } finally { setCrudLoading(false); }
+  }
+
   const isAdmin = session.roles.includes('ADMIN');
   const isSecretary = session.roles.includes('SECRETARY');
+  const canManageSubjects = session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY'].includes(role));
 
   return (
     <Stack spacing={4}>
@@ -163,24 +359,30 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
         <Typography variant="h3">Pulpit</Typography>
       </Box>
 
-      <Grid container spacing={2.5}>
-        <Grid item xs={12} sm={6} lg={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' },
+          gap: 2.5,
+        }}
+      >
+        <Box>
           <MetricCard title="Użytkownicy" value={bootstrap.summary.users} icon={<GroupsRoundedIcon color="primary" fontSize="large" />} />
-        </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
+        </Box>
+        <Box>
           <MetricCard title="Klasy" value={bootstrap.summary.classes} icon={<ClassRoundedIcon color="secondary" fontSize="large" />} />
-        </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
+        </Box>
+        <Box>
           <MetricCard title="Nieprzeczytane wiadomości" value={bootstrap.summary.unreadMessages} icon={<MarkEmailUnreadRoundedIcon color="info" fontSize="large" />} />
-        </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
+        </Box>
+        <Box>
           <MetricCard title="Powiadomienia" value={bootstrap.summary.unreadNotifications} icon={<NotificationsActiveRoundedIcon color="success" fontSize="large" />} />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {activeSection === 'dashboard' ? (
         <Grid container spacing={2.5}>
-          <Grid item xs={12} lg={6}>
+          <Grid item xs={12} lg={6} sx={{ minWidth: 0 }}>
             <Box sx={{
               p: 3, borderRadius: 4, border: '1px solid rgba(17, 100, 102, 0.12)',
               background: 'linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,250,242,0.84))',
@@ -205,7 +407,7 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
               </Stack>
             </Box>
           </Grid>
-          <Grid item xs={12} lg={6}>
+          <Grid item xs={12} lg={6} sx={{ minWidth: 0 }}>
             <Box sx={{
               p: 3, borderRadius: 4, border: '1px solid rgba(17, 100, 102, 0.12)',
               background: 'linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,250,242,0.84))',
@@ -234,9 +436,16 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
               { key: 'roles', label: 'Role', render: (row) => <Stack direction="row" spacing={0.5} flexWrap="wrap">{row.roles.map((role) => <Chip key={role} label={role} size="small" />)}</Stack> },
               { key: 'status', label: 'Status', render: (row) => <Chip label={row.status} color={row.status === 'ACTIVE' ? 'success' : 'default'} size="small" /> },
               { key: 'actions', label: 'Akcje', render: (row) => (
-                <Button size="small" variant="outlined" onClick={() => openEditUser(row)}>
-                  Edytuj
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="outlined" onClick={() => openEditUser(row)}>
+                    Edytuj
+                  </Button>
+                  {isAdmin ? (
+                    <Button size="small" color="error" variant="outlined" onClick={() => { void handleDeleteUser(row.id); }}>
+                      Usuń
+                    </Button>
+                  ) : null}
+                </Stack>
               ) },
             ]}
           />
@@ -252,6 +461,20 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
             { key: 'name', label: 'Nazwa' },
             { key: 'schoolYear', label: 'Rok szkolny' },
             { key: 'teacherId', label: 'Wychowawca', render: (row) => teacherNameById.get(row.teacherId) ?? row.teacherId },
+            {
+              key: 'actions',
+              label: 'Akcje',
+              render: (row) => (
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="outlined" onClick={() => openEditClass(row)}>
+                    Edytuj
+                  </Button>
+                  <Button size="small" color="error" variant="outlined" onClick={() => { void handleDeleteClass(row.id); }}>
+                    Usuń
+                  </Button>
+                </Stack>
+              ),
+            },
           ]} />
           <EntityTable title="Plan lekcji" rows={bootstrap.lessons} columns={[
             { key: 'dayOfWeek', label: 'Dzień' },
@@ -261,11 +484,40 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
             { key: 'subjectId', label: 'Przedmiot', render: (row) => subjectById.get(row.subjectId)?.name ?? row.subjectId },
             { key: 'roomNumber', label: 'Sala' },
           ]} />
+          {canManageSubjects ? (
+            <Stack spacing={2.5}>
+              <Box>
+                <Button variant="contained" onClick={() => { setCrudError(null); setShowAddSubject(true); }}>Dodaj przedmiot</Button>
+              </Box>
+              <EntityTable
+                title="Przedmioty"
+                rows={bootstrap.subjects}
+                columns={[
+                  { key: 'name', label: 'Nazwa' },
+                  { key: 'description', label: 'Opis' },
+                  {
+                    key: 'actions',
+                    label: 'Akcje',
+                    render: (row) => (
+                      <Stack direction="row" spacing={1}>
+                        <Button size="small" variant="outlined" onClick={() => openEditSubject(row)}>
+                          Edytuj
+                        </Button>
+                        <Button size="small" color="error" variant="outlined" onClick={() => { void handleDeleteSubject(row.id); }}>
+                          Usuń
+                        </Button>
+                      </Stack>
+                    ),
+                  },
+                ]}
+              />
+            </Stack>
+          ) : null}
         </Stack>
       ) : null}
 
       {activeSection === 'schedule' ? (
-        <ScheduleView bootstrap={bootstrap} session={session} />
+        <ScheduleView bootstrap={bootstrap} session={session} onRefreshBootstrap={onRefreshBootstrap} />
       ) : null}
 
       {activeSection === 'grades' ? (
@@ -286,6 +538,20 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
             { key: 'classId', label: 'Klasa', render: (row) => classById.get(row.classId)?.name ?? row.classId },
             { key: 'parentId', label: 'Rodzic', render: (row) => bootstrap.parents.find((p) => p.id === row.parentId)?.phoneNumber ?? row.parentId },
             { key: 'userId', label: 'Użytkownik', render: (row) => { const u = userById.get(row.userId); return u ? `${u.firstName} ${u.lastName}` : row.userId; } },
+            {
+              key: 'actions',
+              label: 'Akcje',
+              render: (row) => (
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="outlined" onClick={() => openEditStudent(row)}>
+                    Edytuj
+                  </Button>
+                  <Button size="small" color="error" variant="outlined" onClick={() => { void handleDeleteStudent(row.id); }}>
+                    Usuń
+                  </Button>
+                </Stack>
+              ),
+            },
           ]} />
           <EntityTable title="Frekwencja" rows={bootstrap.attendance} columns={[
             { key: 'sessionId', label: 'Lekcja', render: (row) => bootstrap.classSessions.find((s) => s.id === row.sessionId)?.topic ?? row.sessionId },
@@ -413,6 +679,103 @@ export function DashboardView({ bootstrap, activeSection, session, onRefreshBoot
           <DialogActions>
             <Button onClick={() => setShowAddClass(false)}>Anuluj</Button>
             <Button type="submit" variant="contained" disabled={crudLoading}>{crudLoading ? 'Zapisywanie...' : 'Dodaj'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* ── Edit Class Dialog ── */}
+      <Dialog open={showEditClass} onClose={closeEditClass} maxWidth="sm" fullWidth>
+        <form onSubmit={(e) => { void handleEditClass(e); }}>
+          <DialogTitle>Edytuj klasę</DialogTitle>
+          <DialogContent>
+            {crudError && <Alert severity="error" sx={{ mb: 2 }}>{crudError}</Alert>}
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField label="Nazwa klasy" value={ecName} onChange={(e) => setEcName(e.target.value)} required fullWidth />
+              <TextField select label="Wychowawca" value={ecTeacherId} onChange={(e) => setEcTeacherId(e.target.value)} required fullWidth>
+                {bootstrap.users.filter((u) => u.roles.includes('TEACHER')).map((u) => (
+                  <MenuItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</MenuItem>
+                ))}
+              </TextField>
+              <TextField label="Rok szkolny" value={ecYear} onChange={(e) => setEcYear(e.target.value)} required fullWidth />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeEditClass}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={crudLoading || !editingClassId}>{crudLoading ? 'Zapisywanie...' : 'Zapisz'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* ── Edit Student Dialog ── */}
+      <Dialog open={showEditStudent} onClose={closeEditStudent} maxWidth="sm" fullWidth>
+        <form onSubmit={(e) => { void handleEditStudent(e); }}>
+          <DialogTitle>Edytuj ucznia</DialogTitle>
+          <DialogContent>
+            {crudError && <Alert severity="error" sx={{ mb: 2 }}>{crudError}</Alert>}
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField select label="Użytkownik" value={esUserId} onChange={(e) => setEsUserId(e.target.value)} required fullWidth>
+                {bootstrap.users.filter((u) => u.roles.includes('STUDENT')).map((u) => (
+                  <MenuItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</MenuItem>
+                ))}
+              </TextField>
+              <TextField select label="Rodzic" value={esParentId} onChange={(e) => setEsParentId(e.target.value)} fullWidth>
+                <MenuItem value="">Brak</MenuItem>
+                {bootstrap.parents.map((parent) => {
+                  const parentUser = userById.get(parent.userId);
+                  return (
+                    <MenuItem key={parent.id} value={parent.id}>
+                      {parentUser ? `${parentUser.firstName} ${parentUser.lastName}` : parent.phoneNumber}
+                    </MenuItem>
+                  );
+                })}
+              </TextField>
+              <TextField select label="Klasa" value={esClassId} onChange={(e) => setEsClassId(e.target.value)} required fullWidth>
+                {bootstrap.classes.map((schoolClass) => (
+                  <MenuItem key={schoolClass.id} value={schoolClass.id}>{schoolClass.name}</MenuItem>
+                ))}
+              </TextField>
+              <TextField label="Numer ucznia" value={esNumber} onChange={(e) => setEsNumber(e.target.value)} required fullWidth />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeEditStudent}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={crudLoading || !editingStudentId}>{crudLoading ? 'Zapisywanie...' : 'Zapisz'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* ── Add Subject Dialog ── */}
+      <Dialog open={showAddSubject} onClose={() => setShowAddSubject(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={(e) => { void handleAddSubject(e); }}>
+          <DialogTitle>Dodaj przedmiot</DialogTitle>
+          <DialogContent>
+            {crudError && <Alert severity="error" sx={{ mb: 2 }}>{crudError}</Alert>}
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField label="Nazwa" value={subName} onChange={(e) => setSubName(e.target.value)} required fullWidth />
+              <TextField label="Opis" value={subDescription} onChange={(e) => setSubDescription(e.target.value)} required fullWidth multiline minRows={3} />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowAddSubject(false)}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={crudLoading}>{crudLoading ? 'Zapisywanie...' : 'Dodaj'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* ── Edit Subject Dialog ── */}
+      <Dialog open={showEditSubject} onClose={() => setShowEditSubject(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={(e) => { void handleEditSubject(e); }}>
+          <DialogTitle>Edytuj przedmiot</DialogTitle>
+          <DialogContent>
+            {crudError && <Alert severity="error" sx={{ mb: 2 }}>{crudError}</Alert>}
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField label="Nazwa" value={subName} onChange={(e) => setSubName(e.target.value)} required fullWidth />
+              <TextField label="Opis" value={subDescription} onChange={(e) => setSubDescription(e.target.value)} required fullWidth multiline minRows={3} />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowEditSubject(false)}>Anuluj</Button>
+            <Button type="submit" variant="contained" disabled={crudLoading || !editingSubjectId}>{crudLoading ? 'Zapisywanie...' : 'Zapisz'}</Button>
           </DialogActions>
         </form>
       </Dialog>

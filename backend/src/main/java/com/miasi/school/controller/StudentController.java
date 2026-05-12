@@ -1,12 +1,15 @@
 package com.miasi.school.controller;
 
 import com.miasi.school.dto.CreateStudentRequest;
+import com.miasi.school.dto.UpdateStudentRequest;
 import com.miasi.school.model.SchoolDomain;
 import com.miasi.school.service.DemoDataStore;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/students")
@@ -25,5 +28,23 @@ public class StudentController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(demoDataStore.createStudent(request, authorization));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SchoolDomain.StudentProfile> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateStudentRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        return ResponseEntity.ok(demoDataStore.updateStudent(id, request, authorization));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        demoDataStore.deleteStudent(id, authorization);
+        return ResponseEntity.noContent().build();
     }
 }

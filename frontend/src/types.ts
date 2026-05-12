@@ -184,6 +184,50 @@ export interface CreateAttendanceRequest {
   excuseComment?: string;
 }
 
+export interface ExcuseAttendanceRequest {
+  excuseComment: string;
+}
+
+export interface UpdateGradeRequest {
+  studentId: string;
+  teacherId: string;
+  subjectId: string;
+  decimalValue: number;
+  weight: number;
+  type: string;
+  comment: string;
+}
+
+export interface CreateSubjectRequest {
+  name: string;
+  description: string;
+}
+
+export interface UpdateSubjectRequest {
+  name: string;
+  description: string;
+}
+
+export interface CreateLessonRequest {
+  classId: string;
+  teacherId: string;
+  subjectId: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  roomNumber: string;
+}
+
+export interface UpdateLessonRequest {
+  classId: string;
+  teacherId: string;
+  subjectId: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  roomNumber: string;
+}
+
 export interface CreateMessageRequest {
   recipientId: string;
   title: string;
@@ -204,6 +248,19 @@ export interface UpdateUserRequest {
   email: string;
   status: string;
   roles: string[];
+}
+
+export interface UpdateClassRequest {
+  name: string;
+  teacherId: string;
+  schoolYear: string;
+}
+
+export interface UpdateStudentRequest {
+  userId: string;
+  parentId?: string;
+  classId: string;
+  studentNumber: string;
 }
 
 export interface CreateStudentRequest {
