@@ -37,7 +37,8 @@ public class ReportService {
     }
 
     public List<AttendanceReportEntry> getAttendanceReport(String authHeader) {
-        authService.requireAuthorizedUser(authHeader);
+        UserEntity actor = authService.requireAuthorizedUser(authHeader);
+        authService.requireRole(actor, "ADMIN", "DIRECTOR", "SECRETARY");
         
         List<StudentProfileEntity> students = studentRepo.findAll();
         Map<UUID, UserEntity> users = userRepo.findAll().stream().collect(Collectors.toMap(UserEntity::getId, u -> u));
@@ -67,7 +68,8 @@ public class ReportService {
     }
 
     public List<GradeReportEntry> getGradesReport(String authHeader) {
-        authService.requireAuthorizedUser(authHeader);
+        UserEntity actor = authService.requireAuthorizedUser(authHeader);
+        authService.requireRole(actor, "ADMIN", "DIRECTOR", "SECRETARY");
 
         List<StudentProfileEntity> students = studentRepo.findAll();
         Map<UUID, UserEntity> users = userRepo.findAll().stream().collect(Collectors.toMap(UserEntity::getId, u -> u));
