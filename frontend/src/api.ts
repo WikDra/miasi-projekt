@@ -66,8 +66,10 @@ function authHeaders(token: string): Record<string, string> {
   };
 }
 
-export async function fetchBootstrap(): Promise<BootstrapResponse> {
-  return requestJson<BootstrapResponse>('/api/bootstrap');
+export async function fetchBootstrap(token: string): Promise<BootstrapResponse> {
+  return requestJson<BootstrapResponse>('/api/bootstrap', {
+    headers: authHeaders(token),
+  });
 }
 
 export async function login(request: LoginRequest): Promise<LoginResponse> {

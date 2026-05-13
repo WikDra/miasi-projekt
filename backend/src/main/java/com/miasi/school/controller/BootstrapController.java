@@ -3,6 +3,7 @@ package com.miasi.school.controller;
 import com.miasi.school.dto.BootstrapResponse;
 import com.miasi.school.service.BootstrapService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,7 +18,7 @@ public class BootstrapController {
     }
 
     @GetMapping("/bootstrap")
-    public BootstrapResponse bootstrap() {
-        return bootstrapService.bootstrap();
+    public BootstrapResponse bootstrap(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        return bootstrapService.bootstrap(authorization);
     }
 }

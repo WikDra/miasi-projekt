@@ -31,6 +31,7 @@ public class BootstrapService {
     private final AcademicService academicService;
     private final EvaluationService evaluationService;
     private final MessagingService messagingService;
+    private final AuthService authService;
 
     public BootstrapService(UserRepository userRepo,
                             TeacherProfileRepository teacherRepo,
@@ -51,7 +52,8 @@ public class BootstrapService {
                             UserService userService,
                             AcademicService academicService,
                             EvaluationService evaluationService,
-                            MessagingService messagingService) {
+                            MessagingService messagingService,
+                            AuthService authService) {
         this.userRepo = userRepo;
         this.teacherRepo = teacherRepo;
         this.studentRepo = studentRepo;
@@ -72,9 +74,12 @@ public class BootstrapService {
         this.academicService = academicService;
         this.evaluationService = evaluationService;
         this.messagingService = messagingService;
+        this.authService = authService;
     }
 
-    public BootstrapResponse bootstrap() {
+    public BootstrapResponse bootstrap(String authHeader) {
+        authService.requireAuthorizedUser(authHeader);
+
         return new BootstrapResponse(
                 new SchoolDomain.DashboardSummary(
                         (int)userRepo.count(), (int)teacherRepo.count(), (int)studentRepo.count(), (int)classRepo.count(),

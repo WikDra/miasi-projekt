@@ -22,7 +22,7 @@ export default function App() {
       try {
         const parsed = JSON.parse(savedSession) as Session;
         setSession(parsed);
-        void loadBootstrap();
+        void loadBootstrap(false, parsed.token);
       } catch {
         window.localStorage.removeItem(sessionStorageKey);
       }
@@ -30,10 +30,14 @@ export default function App() {
     setInitializing(false);
   }, []);
 
-  async function loadBootstrap(preserveSessionOnFailure = false) {
+  async function loadBootstrap(preserveSessionOnFailure = false, tokenOverride?: string) {
     try {
       setError(null);
-      setBootstrap(await fetchBootstrap());
+      const token = tokenOverride ?? session?.token;
+      if (!token) {
+        throw new Error('Brak aktywnej sesji');
+      }
+      setBootstrap(await fetchBootstrap(token));
       return true;
     } catch (loadError) {
       const message = loadError instanceof Error ? loadError.message : 'Nie udało się pobrać danych z backendu';
@@ -62,7 +66,7 @@ export default function App() {
 
       setSession(nextSession);
       window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession));
-      const loaded = await loadBootstrap();
+      const loaded = await loadBootstrap(false, nextSession.token);
       if (!loaded) {
         return;
       }
