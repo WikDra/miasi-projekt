@@ -1,6 +1,7 @@
 package com.miasi.school.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.miasi.school.dto.LoginResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,34 @@ class AuthBootstrapIntegrationTest {
                 .andExpect(jsonPath("$.classes.length()", greaterThanOrEqualTo(1)));
     }
 
+    @Test
+    void adminBootstrapKeepsFullAdministrativeView() throws Exception {
+        LoginResponse admin = login("admin@school.local", "Admin123!");
+
+        mockMvc.perform(get("/api/bootstrap")
+                        .header("Authorization", "Bearer " + admin.token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.users.length()").value(6))
+                .andExpect(jsonPath("$.roles.length()", greaterThanOrEqualTo(6)));
+    }
+
+    @Test
+    void studentBootstrapDoesNotExposeAllUsers() throws Exception {
+        LoginResponse student = login("student@school.local", "Student123!");
+
+        String responseBody = mockMvc.perform(get("/api/bootstrap")
+                        .header("Authorization", "Bearer " + student.token()))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode response = objectMapper.readTree(responseBody);
+        assertTrue(response.get("users").size() < 6);
+        assertTrue(containsUserEmail(response, "student@school.local"));
+        assertFalse(containsUserEmail(response, "admin@school.local"));
+    }
+
     private LoginResponse login(String email, String password) throws Exception {
         String responseBody = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -78,5 +107,14 @@ class AuthBootstrapIntegrationTest {
                 .getContentAsString();
 
         return objectMapper.readValue(responseBody, LoginResponse.class);
+    }
+
+    private boolean containsUserEmail(JsonNode bootstrap, String email) {
+        for (JsonNode user : bootstrap.get("users")) {
+            if (email.equals(user.get("email").asText())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
