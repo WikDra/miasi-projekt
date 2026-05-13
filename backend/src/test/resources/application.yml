@@ -4,3 +4,8 @@ spring:
     username: sa
     password: ""
     driver-class-name: org.h2.Driver
+
+app:
+  jwt:
+    secret: test-jwt-secret-that-is-long-enough-for-hmac
+    expiration-seconds: 3600

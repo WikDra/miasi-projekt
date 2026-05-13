@@ -16,10 +16,12 @@ public class AuthService {
 
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepo, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepo, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public LoginResponse authenticate(LoginRequest request) {
@@ -31,23 +33,12 @@ public class AuthService {
         }
 
         String fullName = user.getFirstName() + " " + user.getLastName();
-        return new LoginResponse(user.getId(), fullName, user.getEmail(), user.getRoles(), "demo-token-" + user.getId());
+        return new LoginResponse(user.getId(), fullName, user.getEmail(), user.getRoles(), jwtService.createToken(user));
     }
 
     public UserEntity requireAuthorizedUser(String authorizationHeader) {
         String token = extractToken(authorizationHeader);
-        String tokenPrefix = "demo-token-";
-        
-        if (token == null || !token.startsWith(tokenPrefix)) {
-            throw new AuthenticationFailedException("Nieprawidłowy lub brakujący token");
-        }
-
-        UUID userId;
-        try {
-            userId = UUID.fromString(token.substring(tokenPrefix.length()));
-        } catch (IllegalArgumentException exception) {
-            throw new AuthenticationFailedException("Nieprawidłowy format tokenu");
-        }
+        UUID userId = jwtService.validateAndExtractUserId(token);
 
         return userRepo.findById(userId)
                 .orElseThrow(() -> new AuthenticationFailedException("Token wygasł lub użytkownik nie istnieje"));
