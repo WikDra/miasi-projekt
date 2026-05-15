@@ -3,6 +3,7 @@ package com.miasi.school.service;
 import com.miasi.school.entity.SchoolEntities.*;
 import com.miasi.school.repository.*;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class DataSeeder implements CommandLineRunner {
     private final LessonRepository lessonRepo;
     private final ClassSessionRepository sessionRepo;
     private final RoleRepository roleRepo;
+    private final boolean seedDemoData;
 
     public DataSeeder(PasswordEncoder passwordEncoder,
                       UserRepository userRepo,
@@ -40,7 +42,8 @@ public class DataSeeder implements CommandLineRunner {
                       SubjectRepository subjectRepo,
                       LessonRepository lessonRepo,
                       ClassSessionRepository sessionRepo,
-                      RoleRepository roleRepo) {
+                      RoleRepository roleRepo,
+                      @Value("${app.seed-demo-data:true}") boolean seedDemoData) {
         this.passwordEncoder = passwordEncoder;
         this.userRepo = userRepo;
         this.teacherRepo = teacherRepo;
@@ -53,18 +56,24 @@ public class DataSeeder implements CommandLineRunner {
         this.lessonRepo = lessonRepo;
         this.sessionRepo = sessionRepo;
         this.roleRepo = roleRepo;
+        this.seedDemoData = seedDemoData;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
+        if (!seedDemoData) {
+            System.out.println("Demo data seeding disabled by app.seed-demo-data=false.");
+            return;
+        }
+
         if (userRepo.findByEmailIgnoreCase("admin@school.local").isPresent()) {
             return;
         }
 
-        System.out.println("FULL SYNC: Seeding test data exactly as per README.md...");
+        System.out.println("Seeding local demo data from README.md accounts...");
 
-        // Clean slate to avoid confusion with old incorrect accounts
+        // The demo seed only runs when the bundled admin account is missing.
         userRepo.deleteAll();
         teacherRepo.deleteAll();
         studentRepo.deleteAll();
@@ -118,6 +127,6 @@ public class DataSeeder implements CommandLineRunner {
 
         sessionRepo.save(new ClassSessionEntity(UUID.randomUUID(), lesson.getId(), LocalDate.now(), "Wprowadzenie", "SCHEDULED"));
 
-        System.out.println("SYNC COMPLETE: Database is now 100% compliant with README.md and Frontend defaults.");
+        System.out.println("Demo data seed complete.");
     }
 }

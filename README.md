@@ -1,36 +1,30 @@
 # System zarządzania szkołą
 
-Aplikacja do obsługi szkoły z logowaniem, pulpitem, rolami użytkowników i pełnym zestawem podstawowych funkcji administracyjnych oraz dydaktycznych. Backend działa na Spring Boot, frontend na React + TypeScript + Material UI, a dane produkcyjne są przechowywane w PostgreSQL.
+Lokalne demo aplikacji do obsługi szkoły. Backend działa na Spring Boot, frontend na React + TypeScript + Material UI, a dane lokalne są trzymane w PostgreSQL uruchamianym z Dockera.
+
+Projekt jest przygotowany jako baza do dalszego rozwoju. Nie traktuj obecnej konfiguracji jako produkcyjnej.
 
 ## Funkcje
 
-- logowanie i autoryzacja na poziomie ról,
-- pulpit z przeglądem danych,
+- logowanie z tokenem JWT,
+- autoryzacja na poziomie ról i wybranych relacji domenowych,
+- pulpit z podsumowaniem danych,
 - zarządzanie użytkownikami, klasami, uczniami i przedmiotami,
-- plan lekcji i zarządzanie sesjami lekcyjnymi,
-- oceny z możliwością dodawania, edycji i usuwania,
-- frekwencja i usprawiedliwianie nieobecności,
+- plan lekcji i sesje lekcyjne,
+- oceny, frekwencja i usprawiedliwienia,
 - wiadomości, powiadomienia i materiały dydaktyczne,
-- widoki responsywne na desktop i mobile.
+- testy backendu na H2.
 
 ## Stack
 
 - Backend: Java 21, Spring Boot 3.4.4, Spring Data JPA, Validation,
 - Frontend: React 18, TypeScript, Vite, Material UI 6,
-- Baza: PostgreSQL 16 w Dockerze,
+- Baza lokalna: PostgreSQL 16 w Dockerze,
 - Testy backendu: H2 w pamięci.
 
-## Wymagania
+## Szybki Start
 
-- Java 21,
-- Maven 3.9+,
-- Node.js 18+,
-- npm,
-- Docker i Docker Compose do uruchomienia PostgreSQL.
-
-## Szybki start
-
-1. Uruchom bazę danych:
+1. Uruchom bazę:
 
 ```powershell
 docker compose up -d postgres
@@ -44,6 +38,20 @@ mvn test
 mvn spring-boot:run
 ```
 
+Jeśli Maven albo Java nie są dostępne w terminalu, ustaw lokalnie `JAVA_HOME` i dodaj katalog `bin` Mavena do `PATH` zgodnie ze swoją instalacją.
+
+```powershell
+java -version
+mvn -version
+```
+
+Po poprawnym ustawieniu środowiska:
+
+```powershell
+mvn test
+mvn spring-boot:run
+```
+
 3. Uruchom frontend:
 
 ```powershell
@@ -52,63 +60,34 @@ npm install
 npm run dev
 ```
 
-Frontend działa pod adresem `http://localhost:5173` i wysyła zapytania API przez proxy `/api` do backendu na `http://localhost:8080`.
+Frontend działa pod `http://localhost:5173` i wysyła zapytania `/api` do backendu na `http://localhost:8080`.
 
-## Konfiguracja bazy
+## Konfiguracja Lokalna
 
-Backend domyślnie łączy się z PostgreSQL na `localhost:5432`.
+Backend domyślnie łączy się z PostgreSQL:
 
-Domyślne dane logowania do bazy:
-
+- URL: `jdbc:postgresql://localhost:5432/school`
 - baza: `school`
 - użytkownik: `school`
 - hasło: `school`
 
-Możesz nadpisać ustawienia środowiskowe przez:
+Możesz nadpisać ustawienia:
 
 - `SPRING_DATASOURCE_URL`
 - `SPRING_DATASOURCE_USERNAME`
 - `SPRING_DATASOURCE_PASSWORD`
+- `JWT_SECRET`
+- `JWT_EXPIRATION_SECONDS`
+- `APP_SEED_DEMO_DATA`
+- `APP_DEMO_MODE`
 
-Jeśli chcesz wyczyścić lokalne dane, usuń wolumen Dockera:
-
-```powershell
-docker compose down -v
-```
-
-## Jak to działa
-
-System opiera się na **bazie relacyjnej PostgreSQL** z wykorzystaniem **Spring Data JPA**. Dane są znormalizowane i rozdzielone na dedykowane encje (użytkownicy, oceny, lekcje itd.). Logika biznesowa jest odseparowana w warstwie serwisowej (Auth, Academic, Evaluation itd.). Przy pierwszym uruchomieniu system automatycznie seeduje bazę danymi testowymi, jeśli jest pusta.
-
-## Skrypty
-
-### Backend
+Domyślnie `APP_SEED_DEMO_DATA=true`, więc przy pustej bazie tworzone są konta demo. Aby wyłączyć seed:
 
 ```powershell
-cd backend
-mvn test
-mvn spring-boot:run
-mvn package
+$env:APP_SEED_DEMO_DATA = "false"
 ```
 
-### Frontend
-
-```powershell
-cd frontend
-npm install
-npm run dev
-npm run build
-npm run preview
-```
-
-## Struktura projektu
-
-- `backend/` - aplikacja Spring Boot, warstwa serwisowa i encje JPA,
-- `frontend/` - aplikacja React/Vite,
-- `docker-compose.yml` - lokalny PostgreSQL,
-- `README.md` - dokumentacja uruchomienia i konfiguracji.
-
-## Konta testowe
+## Konta Demo
 
 - `admin@school.local` / `Admin123!`
 - `director@school.local` / `Director123!`
@@ -117,9 +96,40 @@ npm run preview
 - `student@school.local` / `Student123!`
 - `parent@school.local` / `Parent123!`
 
+## Testy I Build
+
+Backend:
+
+```powershell
+cd backend
+mvn test
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm run build
+```
+
+Na Windowsie, jeśli PowerShell blokuje `npm.ps1`, użyj:
+
+```powershell
+npm.cmd run build
+```
+
+## Reset Lokalnych Danych
+
+```powershell
+docker compose down -v
+docker compose up -d postgres
+```
+
+Po kolejnym starcie backendu seed demo odtworzy konta, o ile `APP_SEED_DEMO_DATA=true`.
+
 ## Uwagi
 
-- Aby rozpocząć wpisywanie frekwencji, nauczyciel musi „rozpocząć lekcję” z poziomu widoku **Plan lekcji**.
-- Backend testujesz lokalnie na H2, więc nie musisz mieć uruchomionego Dockera do samego `mvn test`.
-- Produkcyjny/devowy tryb aplikacji zakłada dostępny PostgreSQL.
-- Jeśli backend nie startuje, najpierw sprawdź czy działa kontener `postgres` i czy port `5432` nie jest zajęty.
+- To lokalne demo, nie konfiguracja produkcyjna.
+- JWT ma lokalny sekret domyślny; poza demo ustaw `JWT_SECRET`.
+- Hibernate `ddl-auto=update` jest wygodne lokalnie, ale przed produkcją powinno zostać zastąpione migracjami Flyway/Liquibase.
+- H2 console jest ograniczona do lokalnego hosta.
