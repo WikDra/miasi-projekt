@@ -108,6 +108,30 @@ public class UserService {
         studentRepo.deleteById(id);
     }
 
+    @Transactional
+    public SchoolDomain.StudentProfile suspendStudent(UUID id, String authHeader) {
+        return setStudentUserStatus(id, authHeader, "INACTIVE");
+    }
+
+    @Transactional
+    public SchoolDomain.StudentProfile reactivateStudent(UUID id, String authHeader) {
+        return setStudentUserStatus(id, authHeader, "ACTIVE");
+    }
+
+    private SchoolDomain.StudentProfile setStudentUserStatus(UUID id, String authHeader, String status) {
+        UserEntity actor = authService.requireAuthorizedUser(authHeader);
+        authService.requireRole(actor, "ADMIN", "SECRETARY");
+
+        StudentProfileEntity student = studentRepo.findById(id).orElseThrow();
+        UserEntity user = userRepo.findById(student.getUserId()).orElseThrow();
+        if (!user.getRoles().contains("STUDENT")) {
+            throw new IllegalArgumentException("Profil ucznia nie jest powiązany z kontem ucznia");
+        }
+        user.setStatus(status);
+        userRepo.save(user);
+        return map(student);
+    }
+
     // -- Mappers --
     public SchoolDomain.User map(UserEntity e) {
         return new SchoolDomain.User(e.getId(), e.getFirstName(), e.getLastName(), e.getEmail(), e.getStatus(), e.getRoles());

@@ -47,4 +47,20 @@ public class StudentController {
         userService.deleteStudent(id, authorization);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/suspend")
+    public ResponseEntity<SchoolDomain.StudentProfile> suspend(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        return ResponseEntity.ok(userService.suspendStudent(id, authorization));
+    }
+
+    @PatchMapping("/{id}/reactivate")
+    public ResponseEntity<SchoolDomain.StudentProfile> reactivate(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        return ResponseEntity.ok(userService.reactivateStudent(id, authorization));
+    }
 }

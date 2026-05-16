@@ -180,6 +180,20 @@ export async function deleteStudent(id: string, token: string): Promise<void> {
   });
 }
 
+export async function suspendStudent(id: string, token: string): Promise<StudentProfile> {
+  return requestJson<StudentProfile>(`/api/students/${id}/suspend`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
+export async function reactivateStudent(id: string, token: string): Promise<StudentProfile> {
+  return requestJson<StudentProfile>(`/api/students/${id}/reactivate`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
+
 export async function createClassEntity(request: CreateClassRequest, token: string): Promise<SchoolClass> {
   return requestJson<SchoolClass>('/api/classes', {
     method: 'POST',

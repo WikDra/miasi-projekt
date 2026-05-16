@@ -31,6 +31,9 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new AuthenticationFailedException("Nieprawidłowy email lub hasło");
         }
+        if (!"ACTIVE".equals(user.getStatus())) {
+            throw new AuthenticationFailedException("Konto jest nieaktywne");
+        }
 
         String fullName = user.getFirstName() + " " + user.getLastName();
         return new LoginResponse(user.getId(), fullName, user.getEmail(), user.getRoles(), jwtService.createToken(user));
