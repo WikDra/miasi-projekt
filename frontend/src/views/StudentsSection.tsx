@@ -1,4 +1,4 @@
-import { Box, Button, Chip, MenuItem, Stack, TextField } from '@mui/material';
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import { createStudent, deleteStudent, reactivateStudent, suspendStudent, updateStudent } from '../api';
 import { EntityTable } from '../components/EntityTable';
@@ -19,11 +19,27 @@ export function StudentsSection({ bootstrap, session, onRefreshBootstrap }: Stud
 
   const [showAdd, setShowAdd] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentProfile | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
 
   const [userId, setUserId] = useState('');
   const [parentId, setParentId] = useState('');
   const [classId, setClassId] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
+
+  const selectedStudentUser = selectedStudent ? userById.get(selectedStudent.userId) : undefined;
+  const selectedStudentClass = selectedStudent ? classById.get(selectedStudent.classId) : undefined;
+  const selectedParent = selectedStudent?.parentId ? bootstrap.parents.find((parent) => parent.id === selectedStudent.parentId) : undefined;
+  const selectedParentUser = selectedParent ? userById.get(selectedParent.userId) : undefined;
+
+  function getParentName(parentIdValue: string | undefined) {
+    if (!parentIdValue) {
+      return 'Brak powiązanego rodzica';
+    }
+
+    const parent = bootstrap.parents.find((item) => item.id === parentIdValue);
+    const user = parent ? userById.get(parent.userId) : undefined;
+    return user ? `${user.firstName} ${user.lastName}` : parentIdValue;
+  }
 
   function resetForm() {
     setUserId('');
@@ -99,7 +115,7 @@ export function StudentsSection({ bootstrap, session, onRefreshBootstrap }: Stud
 
     const isSuspended = userById.get(row.userId)?.status === 'INACTIVE';
     return (
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap onClick={(event) => event.stopPropagation()}>
         <ActionButtons onEdit={() => openEdit(row)} onDelete={() => { void handleDelete(row.id); }} />
         {isSuspended ? (
           <Button size="small" color="success" variant="outlined" onClick={() => { void handleReactivate(row); }}>
@@ -127,7 +143,9 @@ export function StudentsSection({ bootstrap, session, onRefreshBootstrap }: Stud
           <EntityTable title="Uczniowie" rows={bootstrap.students} columns={[
             { key: 'studentNumber', label: 'Numer' },
             { key: 'classId', label: 'Klasa', render: (row) => classById.get(row.classId)?.name ?? row.classId },
-            { key: 'parentId', label: 'Rodzic', render: (row) => bootstrap.parents.find((parent) => parent.id === row.parentId)?.phoneNumber ?? row.parentId },
+            { key: 'parentId', label: 'Rodzic', render: (row) => row.parentId ? (
+              getParentName(row.parentId)
+            ) : 'Brak powiązanego rodzica' },
             { key: 'userId', label: 'Użytkownik', render: (row) => {
               const user = userById.get(row.userId);
               return user ? `${user.firstName} ${user.lastName}` : row.userId;
@@ -139,7 +157,7 @@ export function StudentsSection({ bootstrap, session, onRefreshBootstrap }: Stud
                 : <Chip label="Aktywny" color="success" size="small" />;
             } },
             { key: 'actions', label: 'Akcje', render: renderStudentActions },
-          ]} />
+          ]} onRowClick={setSelectedStudent} />
         </Box>
 
         <Box sx={{ maxWidth: '100%', overflow: 'hidden' }}>
@@ -189,6 +207,36 @@ export function StudentsSection({ bootstrap, session, onRefreshBootstrap }: Stud
           })}
         </TextField>
       </CrudDialog>
+
+      <Dialog open={!!selectedStudent} onClose={() => setSelectedStudent(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Szczegóły ucznia</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2.25} sx={{ mt: 1 }}>
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">Uczeń</Typography>
+              <Typography>{selectedStudentUser ? `${selectedStudentUser.firstName} ${selectedStudentUser.lastName}` : 'Nie znaleziono konta'}</Typography>
+              <Typography variant="body2" color="text.secondary">{selectedStudentUser?.email ?? 'brak emaila'}</Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">Dane szkolne</Typography>
+              <Typography>Numer w dzienniku: {selectedStudent?.studentNumber ?? 'brak'}</Typography>
+              <Typography>Klasa: {selectedStudentClass?.name ?? selectedStudent?.classId ?? 'brak'}</Typography>
+              <Typography>Status konta: {selectedStudentUser?.status ?? 'brak'}</Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">Rodzic</Typography>
+              <Typography>{selectedParentUser ? `${selectedParentUser.firstName} ${selectedParentUser.lastName}` : 'Brak powiązanego rodzica'}</Typography>
+              <Typography variant="body2" color="text.secondary">{selectedParentUser?.email ?? 'brak emaila'}</Typography>
+              <Typography variant="body2" color="text.secondary">Telefon: {selectedParent?.phoneNumber ?? 'brak'}</Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedStudent(null)}>Zamknij</Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }
