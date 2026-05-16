@@ -54,7 +54,14 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
   const studentById = useMemo(() => new Map(bootstrap.students.map((student) => [student.id, student])), [bootstrap.students]);
   const subjectById = useMemo(() => new Map(bootstrap.subjects.map((subject) => [subject.id, subject])), [bootstrap.subjects]);
 
-  const canManageGrades = session.roles.some((role) => ['TEACHER', 'ADMIN', 'DIRECTOR'].includes(role));
+  const canManageGrades = session.roles.some((role) => ['ADMIN', 'TEACHER'].includes(role));
+  const currentTeacherProfile = useMemo(
+    () => bootstrap.teachers.find((teacher) => teacher.userId === session.userId),
+    [bootstrap.teachers, session.userId],
+  );
+  const teacherOptions = session.roles.includes('ADMIN')
+    ? bootstrap.teachers
+    : bootstrap.teachers.filter((teacher) => teacher.id === currentTeacherProfile?.id);
 
   const visibleGrades = useMemo(() => {
     if (session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(role))) {
@@ -191,6 +198,13 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
     }
   }
 
+  function canManageGrade(row: (typeof bootstrap.grades)[number]) {
+    if (session.roles.includes('ADMIN')) {
+      return true;
+    }
+    return session.roles.includes('TEACHER') && row.teacherId === currentTeacherProfile?.id;
+  }
+
   const gradeColumns = [
     { key: 'decimalValue', label: 'Ocena' },
     { key: 'weight', label: 'Waga', align: 'center' as const },
@@ -214,7 +228,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
     ...(canManageGrades ? [{
       key: 'actions',
       label: 'Akcje',
-      render: (row: (typeof bootstrap.grades)[number]) => (
+      render: (row: (typeof bootstrap.grades)[number]) => canManageGrade(row) ? (
         <Stack direction="row" spacing={1}>
           <Button size="small" variant="outlined" onClick={() => openEditGrade(row)}>
             Edytuj
@@ -223,7 +237,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
             Usuń
           </Button>
         </Stack>
-      ),
+      ) : '—',
     }] : []),
   ];
 
@@ -281,7 +295,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                   required
                   fullWidth
                 >
-                  {bootstrap.teachers.map((teacher) => {
+                  {teacherOptions.map((teacher) => {
                     const user = userById.get(teacher.userId);
                     return (
                       <MenuItem key={teacher.id} value={teacher.id}>
@@ -398,7 +412,7 @@ export function GradesSection({ bootstrap, session, onRefreshBootstrap }: Grades
                 required
                 fullWidth
               >
-                {bootstrap.teachers.map((teacher) => {
+                {teacherOptions.map((teacher) => {
                   const user = userById.get(teacher.userId);
                   return (
                     <MenuItem key={teacher.id} value={teacher.id}>

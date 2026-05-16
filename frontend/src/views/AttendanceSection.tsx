@@ -1,7 +1,7 @@
 import {
   Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Stack, TextField, Typography,
 } from '@mui/material';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { createAttendance, excuseAttendance } from '../api';
 import { EntityTable } from '../components/EntityTable';
 import type { BootstrapResponse, Session } from '../types';
@@ -24,8 +24,28 @@ const statusColors: Record<string, 'success' | 'error' | 'warning' | 'info'> = {
 export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: AttendanceSectionProps) {
   const userById = useMemo(() => new Map(bootstrap.users.map((u) => [u.id, u])), [bootstrap.users]);
   const studentById = useMemo(() => new Map(bootstrap.students.map((s) => [s.id, s])), [bootstrap.students]);
+  const currentTeacherProfile = useMemo(
+    () => bootstrap.teachers.find((teacher) => teacher.userId === session.userId),
+    [bootstrap.teachers, session.userId],
+  );
 
-  const canManage = session.roles.some((r) => ['TEACHER', 'ADMIN', 'DIRECTOR'].includes(r));
+  const canManage = session.roles.some((r) => ['ADMIN', 'TEACHER', 'SECRETARY'].includes(r));
+  const manageableSessions = useMemo(() => {
+    if (!session.roles.includes('TEACHER') || session.roles.some((role) => ['ADMIN', 'SECRETARY'].includes(role))) {
+      return bootstrap.classSessions;
+    }
+
+    if (!currentTeacherProfile) {
+      return [];
+    }
+
+    const ownLessonIds = new Set(
+      bootstrap.lessons
+        .filter((lesson) => lesson.teacherId === currentTeacherProfile.id)
+        .map((lesson) => lesson.id),
+    );
+    return bootstrap.classSessions.filter((classSession) => ownLessonIds.has(classSession.lessonId));
+  }, [bootstrap.classSessions, bootstrap.lessons, currentTeacherProfile, session.roles]);
 
   // Filter attendance by role
   const visibleAttendance = useMemo(() => {
@@ -54,6 +74,12 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (manageableSessions.length > 0 && !manageableSessions.some((classSession) => classSession.id === sessionId)) {
+      setSessionId(manageableSessions[0].id);
+    }
+  }, [manageableSessions, sessionId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,12 +134,8 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
     if (row.status === 'EXCUSED') {
       return false;
     }
-    if (session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(role))) {
+    if (session.roles.some((role) => ['ADMIN', 'SECRETARY'].includes(role))) {
       return true;
-    }
-    if (session.roles.includes('STUDENT')) {
-      const profile = bootstrap.students.find((student) => student.userId === session.userId);
-      return profile?.id === row.studentId;
     }
     if (session.roles.includes('PARENT')) {
       const childProfile = bootstrap.students.find((student) =>
@@ -142,7 +164,7 @@ export function AttendanceSection({ bootstrap, session, onRefreshBootstrap }: At
               <Stack component="form" spacing={2} sx={{ mt: 2.5 }} onSubmit={(e) => { void handleSubmit(e); }}>
                 <TextField id="sesja_lekcyjna_1" name="sesja_lekcyjna_1" select label="Sesja lekcyjna" value={sessionId}
                   onChange={(e) => setSessionId(e.target.value)} required fullWidth>
-                  {bootstrap.classSessions.map((s) => (
+                  {manageableSessions.map((s) => (
                     <MenuItem key={s.id} value={s.id}>{s.topic} ({s.sessionDate})</MenuItem>
                   ))}
                 </TextField>

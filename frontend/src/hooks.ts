@@ -31,8 +31,8 @@ export function useRoleChecks(session: Session) {
     isStudent: session.roles.includes('STUDENT'),
     isParent: session.roles.includes('PARENT'),
     isStaff: session.roles.some((r) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(r)),
-    canManage: session.roles.some((r) => ['TEACHER', 'ADMIN', 'DIRECTOR'].includes(r)),
-    canManageSubjects: session.roles.some((r) => ['ADMIN', 'DIRECTOR', 'SECRETARY'].includes(r)),
+    canManage: session.roles.some((r) => ['ADMIN', 'TEACHER'].includes(r)),
+    canManageSubjects: session.roles.some((r) => ['ADMIN', 'SECRETARY'].includes(r)),
     canAdminOrSecretary: session.roles.some((r) => ['ADMIN', 'SECRETARY'].includes(r)),
   }), [session.roles]);
 }

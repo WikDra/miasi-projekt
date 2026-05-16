@@ -81,7 +81,8 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
     );
   }, [bootstrap.teachers, bootstrap.users]);
 
-  const canManageLessons = session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(role));
+  const canManageLessons = session.roles.some((role) => ['ADMIN', 'SECRETARY', 'TEACHER'].includes(role));
+  const canCreateSessions = session.roles.some((role) => ['ADMIN', 'DIRECTOR', 'SECRETARY', 'TEACHER'].includes(role));
   const defaultTeacherId = bootstrap.teachers.find((teacher) => teacher.userId === session.userId)?.id ?? bootstrap.teachers[0]?.id ?? '';
   const defaultClassId = bootstrap.classes[0]?.id ?? '';
 
@@ -474,7 +475,7 @@ export function ScheduleView({ bootstrap, session, onRefreshBootstrap }: Schedul
                     <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                       {teacherNameById.get(entry.teacherId) ?? ''}
                     </Typography>
-                    {canManageLessons && (
+                    {canCreateSessions && (
                       <Button
                         size="small"
                         variant="contained"
